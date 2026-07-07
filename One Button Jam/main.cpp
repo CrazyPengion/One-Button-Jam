@@ -18,7 +18,6 @@
 
 #include <iostream> // DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG 
 #include <random>
-#include "raylib.h"
 #include "Classes.h"
 
 /// If we compile for web later, we need this header
@@ -26,18 +25,17 @@
 #include <emscripten.h>
 #endif
 
-void UpdateAndDrawFrame(void* arg);
-int SeedGenerator();
+Player player;
+int seed{ 0 };
+Texture2D groundImages[16];
+
+void UpdateAndDrawFrame();
+unsigned int SeedGenerator();
 void GenerateGround(unsigned int seed);
 
-
-
-
-// main is only used for stuff to launch ONCE at start up - NO LOOPS
+// main is only used for stuff to launch ONCE at start up - NO (infinite) LOOPS
 int main()
 {
-    Texture2D groundImages[16];
-
     for (int i = 0; i < 16; i++) // fills groundImages with tile_grass_0 to _15
     {
         groundImages[i] = LoadTexture(TextFormat("Assets/tile_grass_%d.png", i));
@@ -45,14 +43,19 @@ int main()
 
     InitWindow(1280, 720, "Tap Wizard"); //720p, should fit 1080p monitors without fullscreen well (as well as old ones with full screen
 
+
+
 #if defined(PLATFORM_WEB) // if on web => let browser set FPS and run (monitor native)
-    emscripten_set_main_loop_arg(UpdateAndDrawFrameArg, groundImages, 0, 1);
+    emscripten_set_main_loop(UpdateAndDrawFrame, 0, 1);
 #else // if not on web => run this
     SetTargetFPS(60);
     while (!WindowShouldClose())
     {
-        UpdateAndDrawFrame(groundImages);
+        UpdateAndDrawFrame();
     }
+
+
+
 #endif
     /// UnloadTexture(playerSprite); /// Clean up assets
     /// CloseAudioDevice();
@@ -74,10 +77,9 @@ int main()
 
 
 // everything outside of main (gameplay loops) - this verion's main(){} ------------------------------------------------------------------
-void UpdateAndDrawFrame(void* arg)
+void UpdateAndDrawFrame()
 {
     const unsigned int seed{ SeedGenerator() };
-
 
 
     GenerateGround(seed);
@@ -85,55 +87,120 @@ void UpdateAndDrawFrame(void* arg)
 
 
 
-int SeedGenerator() // ------------------------------------------------------------------------------------------------------------------------
+unsigned int SeedGenerator() // ------------------------------------------------------------------------------------------------------------------------
 {
-    return(GetRandomValue(1, 100000));
+    return(static_cast<unsigned int>(GetRandomValue(1'000'000'000, 2'000'000'000)));
 }
 
 
 
-void GenerateGround(unsigned int seed) // ------------------------------------------------------------------------------------------------------------------------
+void GenerateGround(unsigned int tempSeed) // ------------------------------------------------------------------------------------------------------------------------
 {
-    Vector2 oldPlayerLocation{};
-
-    currentPlayerLocation saved at startup
-
-    if currentPlayerLocation.X > oldPlayerLocation.X + 15
+    for (int i = player.location.y - 24 * 16; i < player.location.y + 24 * 16; i += 16) // for every y within screen + margin
     {
-        load next row of tiles on right
+        for (int j = player.location.x - (70 * 16); i < player.location.x + 70 * 16; i += 16) // for every x within screen + margin (y+x = all ground spots)
+        {
+            // PSEUDO RANDOM NUMBER GENERATOR
+            std::mt19937 gen(seed);
+            std::uniform_int_distribution<> distr(0, 15);
+            int randomTextureIndex = distr(gen);
+            BeginDrawing();
+            DrawTexture(groundImages[randomTextureIndex], j, i, WHITE);
+            EndDrawing();
+        }
     }
 
-    if currentPlayerLocation.X < oldPlayerLocation.X - 15
-    {
-        load next row of tiles on left
-    }
-
-    if currentPlayerLocation.Y > oldPlayerLocation.Y + 15
-    {
-        load next row of tiles on bottom
-    }
-
-    if currentPlayerLocation.Y < oldPlayerLocation.Y - 15
-    {
-        load next row of tiles on top
-    }
+    STUFF TO DO/FIX:
+    1. The images are spawned at the player relative location, they need to spawn inside the screen(currently 1.5 billion pixels away)
+    2. the seed is currently never changed, it needs to be either influenced by x + y / etc or by each 30x30 plot having its own id 
+    3. the images dont get displayed when using DrawTexture(groundImages[3], 100, 100, WHITE);
+    4. printing j always gives 0
+       
+    5. it seems to be slow, this would need either a different system or multithreading (~4 y lines per thread?)
 
 
-    BeginDrawing();
-    
-    // PSEUDO RANDOM NUMBER GENERATOR
-    unsigned int seed = seed; //each seed give always the same number <== seed = random + x * y
-    std::mt19937_64 gen(seed);
-    std::uniform_int_distribution<> distr(0, 15);
-    int randomTextureIndex = distr(gen);
-
-    for (int i = 0; i < 5; i++) 
+    for (int i = 0; i < 5; i++) //for amount of tiles needed
     {
         std::cout << i << "\n";
     }
+
+    /*
+    BeginDrawing();
 
     ClearBackground(WHITE);
     DrawText("Rendering works", 190, 200, 20, BLACK);
 
     EndDrawing();
+    */
 }
+
+/*
+WHAT IS NEEDED TO GENERATE PLOTS
+
+0) Figure out which plot needs a texture
+1) Enter X/Y into generator
+2) Get result of which plot it needs
+3) Draw it
+
+
+0) WHICH PLOTS?
+INITIAL GENERATION:
+Geg.: player.posx ; player.posy ; screen size ; what isn't generated (everything)
+Ges.: generate initial screen full
+
+AFTER INITIAL GENERATION:
+Geg.: player.posx ; player.posy ; screen size ; what side needs to be generate
+Ges.: generate in that direction
+
+
+
+INITIAL:
+Take 0,0 as first generation
+Screen size: 1280, 720
+Block size: 30, 30
+Block distance: 15, 15
+
+720 / 15 = 48         >=> 60  ==> 30 in each direction / 50 - 25
+1280 / 15 = 105.333...>=> 120 ==> 60 in each direction / 108 - 54
+
+for i in 30 (start -30, end 30, 15u steps) { get texture, display }
+
+
+
+NO STORAGE OPTION:
+
+Always generate + 50 / + 108
+
+for i in y
+for j in x
+a = seed(j, i)
+render(a, j, i)
+
+y starts at: player y - 25
+x starts at: player x - 54
+
+
+CODE:
+posx - for (int i = posx - 54*15; i < posx + 54*15; i+=15)
+posy
+getPlot(posx,posy)
+{
+    id = SEED GENERATOR(posx, posy)
+    return id
+}
+
+render(id, posx, posy)
+
+32 PIXELS PER IMAGE
+y: 720/16  >==> 45   => 46 => 48 - 24 for (int i = posx - 24*16; i < posx + 24*16; i+=16)
+x: 1080/16 >==> 67.5 => 68 => 70 - 35 for (int j = posx - 70*16; i < posx + 70*16; i+=16)
+
+
+
+
+
+
+
+POSSIBLE SYMMETRICITY FIX:
+each pixel / 16 pixels get their own "id" - put that into generator 
+*/

@@ -3,6 +3,10 @@
 
 #include "raylib.h"
 
-// Currently unused.
+struct Vector2int
+{
+	int x;
+	int y;
+};
 
 #endif

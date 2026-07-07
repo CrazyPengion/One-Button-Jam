@@ -2,15 +2,17 @@
 #define CLASSES_H
 
 #include "raylib.h"
+#include "Structs.h"
 
 class Player 
 {
 public: //1280, 720
 
-	static constexpr Vector2 screenPos{ 640, 360 }; // middle of screen, HAS TO BE ADJUSTED FOR HALF OF PLAYER SIZE
-	static constexpr Texture2D image{}; // ENTER IMAGE HERE ONCE READY
+	static constexpr Vector2int screenPos{ 640, 360 }; // middle of screen, HAS TO BE ADJUSTED FOR HALF OF PLAYER SIZE
+	//static constexpr Texture2D image{}; // ENTER IMAGE HERE ONCE READY
 
-	Vector2 playerLocation{ 0,0 };
+	Vector2int location{ 1'500'000'000,1'500'000'000 };
+	// old location remoced, could be possibly added for walking effects such as trailing dust (however that could be generated while walking and rise slowly)
 
 	int hp{ 100 };
 	int level{ 0 };
@@ -23,7 +25,7 @@ public:
 	const int damage{};
 	const Texture2D image{};
 
-	Vector2 relativePositionToPlayer{};
+	Vector2int relativePositionToPlayer{};
 	int hp{};
 };
 
