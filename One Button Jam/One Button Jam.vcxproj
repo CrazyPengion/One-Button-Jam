@@ -145,7 +145,29 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Classes.h" />
     <ClCompile Include="main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Structs.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_0.png" />
+    <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_1.png" />
+    <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_10.png" />
+    <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_11.png" />
+    <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_12.png" />
+    <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_13.png" />
+    <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_14.png" />
+    <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_15.png" />
+    <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_2.png" />
+    <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_3.png" />
+    <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_4.png" />
+    <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_5.png" />
+    <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_6.png" />
+    <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_7.png" />
+    <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_8.png" />
+    <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_9.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
