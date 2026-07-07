@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="One Button Jam.vcxproj" />
+  <Project Path="One Button Jam.vcxproj" Id="54838fae-391d-45d9-b2b1-f44497c3945e" />
 </Solution>
