@@ -26,22 +26,28 @@
 #endif
 
 Player player;
-int seed{ 0 };
 Texture2D groundImages[16];
+uint64_t seed{ 0 };
 
 void UpdateAndDrawFrame();
 unsigned int SeedGenerator();
-void GenerateGround(unsigned int seed);
+void GenerateGround();
+
+int testVariable{ 0 };
 
 // main is only used for stuff to launch ONCE at start up - NO (infinite) LOOPS
 int main()
 {
-    for (int i = 0; i < 16; i++) // fills groundImages with tile_grass_0 to _15
+    InitWindow(1280, 720, "Tap Wizard"); //720p, should fit 1080p monitors without fullscreen well (as well as old ones with full screen
+
+    for (int i = 0; i < 16; i++) // fills groundImages with tile_grass_0 to _15     // works only after InitWindow()
     {
-        groundImages[i] = LoadTexture(TextFormat("Assets/tile_grass_%d.png", i));
+        groundImages[i] = LoadTexture(TextFormat("assets/tile_grass_%d.png", i));
     }
 
-    InitWindow(1280, 720, "Tap Wizard"); //720p, should fit 1080p monitors without fullscreen well (as well as old ones with full screen
+    seed = GetRandomValue(0, INT_MAX);
+
+    
 
 
 
@@ -79,10 +85,12 @@ int main()
 // everything outside of main (gameplay loops) - this verion's main(){} ------------------------------------------------------------------
 void UpdateAndDrawFrame()
 {
-    const unsigned int seed{ SeedGenerator() };
-
-
-    GenerateGround(seed);
+    if (testVariable == 0)
+    {
+        GenerateGround();
+        testVariable++;
+    }
+    
 }
 
 
@@ -94,37 +102,45 @@ unsigned int SeedGenerator() // ------------------------------------------------
 
 
 
-void GenerateGround(unsigned int tempSeed) // ------------------------------------------------------------------------------------------------------------------------
+void GenerateGround() // ------------------------------------------------------------------------------------------------------------------------
 {
-    for (int i = player.location.y - 24 * 16; i < player.location.y + 24 * 16; i += 16) // for every y within screen + margin
+    int incrementorY{ 0 };
+    int incrementorX{ 0 };
+
+    BeginDrawing();
+    for (int i = player.location.y - 24; i < player.location.y + 24; i++) // for every y within screen + margin
     {
-        for (int j = player.location.x - (70 * 16); i < player.location.x + 70 * 16; i += 16) // for every x within screen + margin (y+x = all ground spots)
+        incrementorY++;
+        incrementorX = 0;
+
+        for (int j = player.location.x - 70; j < player.location.x + 70; j++) // for every x within screen + margin (y+x = all ground spots)
         {
             // PSEUDO RANDOM NUMBER GENERATOR
-            std::mt19937 gen(seed);
+            std::mt19937 gen();
             std::uniform_int_distribution<> distr(0, 15);
             int randomTextureIndex = distr(gen);
-            BeginDrawing();
-            DrawTexture(groundImages[randomTextureIndex], j, i, WHITE);
-            EndDrawing();
+            DrawTexture(groundImages[randomTextureIndex], (-player.location.x) + j + incrementorX * 16, (-player.location.y) + i + 0 + incrementorY * 16 - 18, WHITE);
+            std::cout << (-player.location.x) + j + 69 + incrementorX * 16 << '\n';
+            incrementorX++;
         }
     }
+    EndDrawing();
 
+    /*
     STUFF TO DO/FIX:
-    1. The images are spawned at the player relative location, they need to spawn inside the screen(currently 1.5 billion pixels away)
     2. the seed is currently never changed, it needs to be either influenced by x + y / etc or by each 30x30 plot having its own id 
     3. the images dont get displayed when using DrawTexture(groundImages[3], 100, 100, WHITE);
     4. printing j always gives 0
        
     5. it seems to be slow, this would need either a different system or multithreading (~4 y lines per thread?)
-
+ 
 
     for (int i = 0; i < 5; i++) //for amount of tiles needed
     {
         std::cout << i << "\n";
     }
 
-    /*
+
     BeginDrawing();
 
     ClearBackground(WHITE);

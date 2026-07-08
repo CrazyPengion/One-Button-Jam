@@ -13,7 +13,7 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Assets">
+    <Filter Include="assets">
       <UniqueIdentifier>{f03ba39b-9096-4e95-b572-88e3ba7e821f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -32,52 +32,52 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_8.png">
-      <Filter>Assets</Filter>
+      <Filter>assets</Filter>
     </Image>
     <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_9.png">
-      <Filter>Assets</Filter>
+      <Filter>assets</Filter>
     </Image>
     <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_10.png">
-      <Filter>Assets</Filter>
+      <Filter>assets</Filter>
     </Image>
     <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_11.png">
-      <Filter>Assets</Filter>
+      <Filter>assets</Filter>
     </Image>
     <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_12.png">
-      <Filter>Assets</Filter>
+      <Filter>assets</Filter>
     </Image>
     <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_13.png">
-      <Filter>Assets</Filter>
+      <Filter>assets</Filter>
     </Image>
     <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_14.png">
-      <Filter>Assets</Filter>
+      <Filter>assets</Filter>
     </Image>
     <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_15.png">
-      <Filter>Assets</Filter>
+      <Filter>assets</Filter>
     </Image>
     <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_0.png">
-      <Filter>Assets</Filter>
+      <Filter>assets</Filter>
     </Image>
     <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_1.png">
-      <Filter>Assets</Filter>
+      <Filter>assets</Filter>
     </Image>
     <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_2.png">
-      <Filter>Assets</Filter>
+      <Filter>assets</Filter>
     </Image>
     <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_3.png">
-      <Filter>Assets</Filter>
+      <Filter>assets</Filter>
     </Image>
     <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_4.png">
-      <Filter>Assets</Filter>
+      <Filter>assets</Filter>
     </Image>
     <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_5.png">
-      <Filter>Assets</Filter>
+      <Filter>assets</Filter>
     </Image>
     <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_6.png">
-      <Filter>Assets</Filter>
+      <Filter>assets</Filter>
     </Image>
     <Image Include="..\..\..\..\Downloads\tiles grass baselayer test\tile_grass_7.png">
-      <Filter>Assets</Filter>
+      <Filter>assets</Filter>
     </Image>
   </ItemGroup>
 </Project>
