@@ -17,8 +17,10 @@
 */
 
 #include <iostream> // DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG 
+
 #include <random>
-#include "Classes.h"
+#include "Classes.h" // also includes "Structs.h"
+#include "Generator.h"
 
 /// If we compile for web later, we need this header
 #if defined(PLATFORM_WEB)
@@ -104,10 +106,14 @@ unsigned int SeedGenerator() // ------------------------------------------------
 
 void GenerateGround() // ------------------------------------------------------------------------------------------------------------------------
 {
+    double generationTime{ 0 };
     int incrementorY{ 0 };
     int incrementorX{ 0 };
 
     BeginDrawing();
+
+    generationTime = GetTime(); // DEBUG
+
     for (int i = player.location.y - 24; i < player.location.y + 24; i++) // for every y within screen + margin
     {
         incrementorY++;
@@ -115,15 +121,18 @@ void GenerateGround() // -------------------------------------------------------
 
         for (int j = player.location.x - 70; j < player.location.x + 70; j++) // for every x within screen + margin (y+x = all ground spots)
         {
-            // PSEUDO RANDOM NUMBER GENERATOR
-            std::mt19937 gen();
-            std::uniform_int_distribution<> distr(0, 15);
-            int randomTextureIndex = distr(gen);
+            
+            // Pseudo Random Number Generator
+            int randomTextureIndex = GetTileTextureIndex(3, seed);
+
             DrawTexture(groundImages[randomTextureIndex], (-player.location.x) + j + incrementorX * 16, (-player.location.y) + i + 0 + incrementorY * 16 - 18, WHITE);
-            std::cout << (-player.location.x) + j + 69 + incrementorX * 16 << '\n';
+
             incrementorX++;
         }
     }
+
+    std::cout << -(generationTime -= GetTime()); // DEBUG
+
     EndDrawing();
 
     /*

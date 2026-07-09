@@ -146,6 +146,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Classes.h" />
+    <ClCompile Include="Generator.h" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
