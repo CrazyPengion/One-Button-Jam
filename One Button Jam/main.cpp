@@ -59,7 +59,24 @@ int main()
     SetTargetFPS(60);
     while (!WindowShouldClose())
     {
-        UpdateAndDrawFrame();
+            UpdateAndDrawFrame();
+            
+            if (KEY_W)
+            {
+                player.location.y -= 1;
+            }
+            if (KEY_A)
+            {
+                player.location.x -= 1;
+            }
+            if (KEY_S)
+            {
+                player.location.y += 1;
+            }
+            if (KEY_D)
+            {
+                player.location.x += 1;
+            }
     }
 
 
@@ -87,12 +104,26 @@ int main()
 // everything outside of main (gameplay loops) - this verion's main(){} ------------------------------------------------------------------
 void UpdateAndDrawFrame()
 {
-    if (testVariable == 0)
+    GenerateGround();
+
+    // DEBUG start
+    if (IsKeyDown(KEY_W))
     {
-        GenerateGround();
-        testVariable++;
+        player.location.y -= 16;
     }
-    
+    if (IsKeyDown(KEY_S))
+    {
+        player.location.y += 16;
+    }
+    if (IsKeyDown(KEY_A))
+    {
+        player.location.x -= 16;
+    }
+    if (IsKeyDown(KEY_D))
+    {
+        player.location.x += 16;
+    }
+    // DEBUG end
 }
 
 
@@ -106,126 +137,55 @@ unsigned int SeedGenerator() // ------------------------------------------------
 
 void GenerateGround() // ------------------------------------------------------------------------------------------------------------------------
 {
-    double generationTime{ 0 };
+    // 1. GET THE CENTER TILE
+    Vector2int center{};
+
+    bool foundCenterTile{ false };
+    center = player.location;
+
+    while (!foundCenterTile)
+    {
+        if (center.x % 32 == 0 and center.y % 32 == 0)
+        {
+            foundCenterTile = true;
+        }
+        else
+        {
+            if (center.x % 32 != 0)
+            {
+                center.x++;
+            }
+
+            if (center.y % 32 != 0)
+            {
+                center.y++;
+            }
+
+        }
+    }
+
+    // 2. RENDER TILES AROUND IT
+
     int incrementorY{ 0 };
     int incrementorX{ 0 };
 
-    BeginDrawing();
+    BeginDrawing(); // 1280, 720
 
-    generationTime = GetTime(); // DEBUG
-
-    for (int i = player.location.y - 24; i < player.location.y + 24; i++) // for every y within screen + margin
+    for (int i = center.y - 24 * 32; i < center.y + 24 * 32; i += 32) // for every y within screen + margin
     {
         incrementorY++;
         incrementorX = 0;
 
-        for (int j = player.location.x - 70; j < player.location.x + 70; j++) // for every x within screen + margin (y+x = all ground spots)
+        for (int j = center.x - 42 * 32; j < center.x + 42 * 32; j += 32) // for every x within screen + margin (y+x = all ground spots)
         {
-            
             // Pseudo Random Number Generator
-            int randomTextureIndex = GetTileTextureIndex(3, seed);
+            int randomTextureIndex = GetTileTextureIndex((j + i * 63246), seed);
 
-            DrawTexture(groundImages[randomTextureIndex], (-player.location.x) + j + incrementorX * 16, (-player.location.y) + i + 0 + incrementorY * 16 - 18, WHITE);
+            DrawTexture(groundImages[randomTextureIndex], (-center.x) + j , (-center.y) + i , WHITE);
 
             incrementorX++;
         }
     }
 
-    std::cout << -(generationTime -= GetTime()); // DEBUG
-
     EndDrawing();
-
-    /*
-    STUFF TO DO/FIX:
-    2. the seed is currently never changed, it needs to be either influenced by x + y / etc or by each 30x30 plot having its own id 
-    3. the images dont get displayed when using DrawTexture(groundImages[3], 100, 100, WHITE);
-    4. printing j always gives 0
-       
-    5. it seems to be slow, this would need either a different system or multithreading (~4 y lines per thread?)
- 
-
-    for (int i = 0; i < 5; i++) //for amount of tiles needed
-    {
-        std::cout << i << "\n";
-    }
-
-
-    BeginDrawing();
-
-    ClearBackground(WHITE);
-    DrawText("Rendering works", 190, 200, 20, BLACK);
-
-    EndDrawing();
-    */
 }
-
-/*
-WHAT IS NEEDED TO GENERATE PLOTS
-
-0) Figure out which plot needs a texture
-1) Enter X/Y into generator
-2) Get result of which plot it needs
-3) Draw it
-
-
-0) WHICH PLOTS?
-INITIAL GENERATION:
-Geg.: player.posx ; player.posy ; screen size ; what isn't generated (everything)
-Ges.: generate initial screen full
-
-AFTER INITIAL GENERATION:
-Geg.: player.posx ; player.posy ; screen size ; what side needs to be generate
-Ges.: generate in that direction
-
-
-
-INITIAL:
-Take 0,0 as first generation
-Screen size: 1280, 720
-Block size: 30, 30
-Block distance: 15, 15
-
-720 / 15 = 48         >=> 60  ==> 30 in each direction / 50 - 25
-1280 / 15 = 105.333...>=> 120 ==> 60 in each direction / 108 - 54
-
-for i in 30 (start -30, end 30, 15u steps) { get texture, display }
-
-
-
-NO STORAGE OPTION:
-
-Always generate + 50 / + 108
-
-for i in y
-for j in x
-a = seed(j, i)
-render(a, j, i)
-
-y starts at: player y - 25
-x starts at: player x - 54
-
-
-CODE:
-posx - for (int i = posx - 54*15; i < posx + 54*15; i+=15)
-posy
-getPlot(posx,posy)
-{
-    id = SEED GENERATOR(posx, posy)
-    return id
-}
-
-render(id, posx, posy)
-
-32 PIXELS PER IMAGE
-y: 720/16  >==> 45   => 46 => 48 - 24 for (int i = posx - 24*16; i < posx + 24*16; i+=16)
-x: 1080/16 >==> 67.5 => 68 => 70 - 35 for (int j = posx - 70*16; i < posx + 70*16; i+=16)
-
-
-
-
-
-
-
-POSSIBLE SYMMETRICITY FIX:
-each pixel / 16 pixels get their own "id" - put that into generator 
-*/
