@@ -6,9 +6,9 @@
 
 class Player 
 {
-public: //1280, 720
+public:
 
-	static constexpr Vector2int screenPos{ 640, 360 }; // middle of screen, HAS TO BE ADJUSTED FOR HALF OF PLAYER SIZE
+	Vector2int screenPos{ (GetScreenWidth() / 2), (GetScreenHeight() / 2)}; // middle of screen, HAS TO BE ADJUSTED FOR HALF OF PLAYER SIZE
 	//static constexpr Texture2D image{}; // ENTER IMAGE HERE ONCE READY
 
 	Vector2 location{ 32'000,32'000 };
@@ -22,12 +22,13 @@ public: //1280, 720
 class Enemy {
 public:
 
-	const int image{};
-	const int damage{};
-	int speed{}; // 1 = normal speed      // COULD ADD FREEZE SPELL
+	int image{}; // Not const as deleting algorithm (std::erase_if) complains if it is
+	int size{}; // used to only render images within screen
+	int damage{1}; //^
+	int speed{1}; // 1 = normal speed      // COULD ADD FREEZE SPELL
 
-	Vector2 relativePositionToPlayer{};
-	int hp{};
+	Vector2 location{};
+	int hp{1};
 };
 
 class Spell

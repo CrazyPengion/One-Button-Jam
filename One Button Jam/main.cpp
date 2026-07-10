@@ -28,7 +28,11 @@
 #endif
 
 // Global Variables
+constexpr int screenWidth{ 1280 };
+constexpr int screenHeight{ 720 };
+
 Texture2D groundImages[16];
+Texture2D enemyImages[3];
 uint32_t seed{ 0 };
 
 Player player;
@@ -37,26 +41,78 @@ std::vector<Enemy> activeEnemies;
 // Forward Declarations of functions by order of appearance in the following code
 void UpdateAndDrawFrame();
 unsigned int SeedGenerator();
-void GenerateGround();
-void UpdateEnemies();
-void DrawEnemies(); // called by ^
 
+//LOGIC
+// void UpdatePlayer();
+void UpdateEnemies();
+
+//DRAWING
+void GenerateGround();
+// void DrawPlayer();
+void DisplayEnemies();
+// void DrawEffects();
+
+//UTILITY
+Vector2 worldPosToScreenPos(Vector2 worldPosition);
+
+
+// DEBUG start
+Enemy testenemy1;
+//Enemy testenemy2;
+//Enemy testenemy3;
+
+// DEBUG end
 
 int testVariable{ 0 };
 
 // main is only used for stuff to launch ONCE at start up - NO (infinite) LOOPS
 int main()
 {
-    InitWindow(1280, 720, "Tap Wizard"); //720p, should fit 1080p monitors without fullscreen well (as well as old ones with full screen
-    SetTargetFPS(120);
+    InitWindow(screenWidth, screenHeight, "Tap Wizard"); //720p, should fit 1080p monitors without fullscreen well (as well as old ones with full screen
 
     for (int i = 0; i < 16; i++) // fills groundImages with tile_grass_0 to _15     // works only after InitWindow()
     {
         groundImages[i] = LoadTexture(TextFormat("assets/tile_grass_%d.png", i));
     }
 
+    for (int i = 0; i < 3; i++) // fills enemyImages with enemy_0 to 2
+    {
+        enemyImages[i] = LoadTexture(TextFormat("assets/enemy_%d.png", i));
+    }
+
     seed = GetRandomValue(0, INT_MAX);
 
+    // DEBUG start
+
+    testenemy1.location.x = 31950;
+    testenemy1.location.y = 31950;
+    //testenemy2.location.x = 300;
+    //testenemy2.location.y = 300;
+    //testenemy3.location.x = 0;
+    //testenemy3.location.y = 0;
+
+    testenemy1.image = 0;
+    //testenemy2.image = 1;
+    //testenemy3.image = 2;
+
+    testenemy1.size = 16;
+    //testenemy2.size = 24;
+    //testenemy3.size = 32;
+
+    activeEnemies.push_back(testenemy1);
+    //activeEnemies.push_back(testenemy2);
+    //activeEnemies.push_back(testenemy3);
+
+    // DEBUG end
+
+
+    /*
+    	int image{}; // Not const as deleting algorithm (std::erase_if) complains if it is
+	int damage{}; //^
+	int speed{}; // 1 = normal speed      // COULD ADD FREEZE SPELL
+
+	Vector2 location{};
+	int hp{};*/
     
 
 
@@ -109,7 +165,7 @@ int main()
 
 
 
-// everything outside of main (gameplay loops) - this verion's main(){} ------------------------------------------------------------------
+// MAIN | GENERAL
 void UpdateAndDrawFrame()
 {
     // Gameplay
@@ -122,9 +178,8 @@ void UpdateAndDrawFrame()
 
     GenerateGround();
     // DisplayPlayer
-    
+    DisplayEnemies();
     // DisplayEffects
-
     EndDrawing();
 
     // DEBUG start
@@ -144,6 +199,7 @@ void UpdateAndDrawFrame()
     {
         player.location.x += 16;
     }
+
     // DEBUG end
 }
 
@@ -152,7 +208,48 @@ unsigned int SeedGenerator() // ------------------------------------------------
     return(static_cast<unsigned int>(GetRandomValue(1'000'000'000, 2'000'000'000)));
 }
 
-// DISPLAYING STUFF
+
+// MAIN LOGIC - first spells to potentially kill mobs before they kill player
+
+// void UpdateSpells();
+
+// void UpdatePlayer();
+
+void UpdateEnemies()
+{
+    // check if enemy died, if yes delete
+    std::erase_if(activeEnemies, [](const Enemy& x)
+    {
+        return x.hp <= 0;
+    });
+
+    // movement
+    for (Enemy& enemy : activeEnemies)
+    {
+        
+        if (enemy.location.x < player.location.x) // move in x direction
+        {
+            enemy.location.x += 10 * enemy.speed * GetFrameTime(); // move towards 0 from negative x
+        }
+        else
+        {
+            enemy.location.x -= 10 * enemy.speed * GetFrameTime(); // move towards 0 from positive x
+        }
+
+        if (enemy.location.y < player.location.y) // move in y direction
+        {
+            enemy.location.y += 10 * enemy.speed * GetFrameTime(); // move towards 0 from negative y
+        }
+        else
+        {
+            enemy.location.y -= 10 * enemy.speed * GetFrameTime(); // move towards 0 from positive y
+        }
+    }
+
+}
+
+
+// DISPLAYING STUFF - first background - last foreground
 
 void GenerateGround() // ------------------------------------------------------------------------------------------------------------------------
 {
@@ -208,48 +305,41 @@ void GenerateGround() // -------------------------------------------------------
     }
 }
 
-//player
+// void DisplayPlayer();
 
-// ENEMIES
-void UpdateEnemies()
+void DisplayEnemies() // 1280, 720
 {
-    //death
-    for (Enemy& enemy : activeEnemies)
+    for (int i = 0; i < activeEnemies.size(); i++) // for all enemies
     {
-        if (enemy.hp <= 0)
-        {
-            kill enemy (remove from activeEnemies)
-                also need: void UpdatePlayer
-        }
-    }
+        // if enemy visible on screen
+        Vector2 tempLocation{ worldPosToScreenPos(activeEnemies[i].location) }; // get screen position, 0;0 is middle
 
-    // movement
-    for (Enemy& enemy : activeEnemies)
-    {
-        if (enemy.relativePositionToPlayer.x < 0) // move in x direction
+        if (tempLocation.x < (GetScreenWidth() / 2)                                // further left than right screen edge
+            and (tempLocation.x + activeEnemies[i].size) > -(GetScreenWidth() / 2) // further right than left screen edge
+            and tempLocation.y < (GetScreenHeight() / 2)                           // further up than bottom screen edge
+            and tempLocation.y + activeEnemies[i].size > -(GetScreenHeight() / 2)) // further down than tom sceen edge
         {
-            enemy.relativePositionToPlayer.x += 0.1 * enemy.speed * GetFrameTime(); // move towards 0 from negative
-        }
-        else
-        {
-            enemy.relativePositionToPlayer.x -= 0.1 * enemy.speed * GetFrameTime(); // move towards 0 from positive
-        }
-
-        if (enemy.relativePositionToPlayer.y < 0) // move in y direction
-        {
-            enemy.relativePositionToPlayer.y += 0.1 * enemy.speed * GetFrameTime(); // move towards 0 from negative
-        }
-        else
-        {
-            enemy.relativePositionToPlayer.y -= 0.1 * enemy.speed * GetFrameTime(); // move towards 0 from positive
+            // draw enemy
+            Vector2 tempPosition = worldPosToScreenPos(activeEnemies[i].location);
+            tempPosition.x += (GetScreenWidth() / 2);
+            tempPosition.y += (GetScreenHeight() / 2);
+            DrawTexture(enemyImages[activeEnemies[i].image], tempPosition.x, tempPosition.y, WHITE);
+            std::cout << "| " << tempPosition.x << " | " << tempPosition.y << " |\n";
         }
     }
     
 }
 
-void DisplayEnemies()
-{
-    DrawTexture(enemyImages[image], player.location relativePositionToPlayer.x);
-}
+// void DisplaySpells();
 
-//effects
+// get coordinates where something should be displayed on screen from the world position
+// does NOT account for something being out of frame - always returns value
+Vector2 worldPosToScreenPos(Vector2 worldPosition)
+{
+    Vector2 screenPosition;
+
+    screenPosition.x = worldPosition.x - player.location.x;
+    screenPosition.y = worldPosition.y - player.location.y;
+    
+    return screenPosition;
+}
