@@ -28,15 +28,18 @@
 #endif
 
 // Global Variables
-Player player;
 Texture2D groundImages[16];
-uint64_t seed{ 0 };
+uint32_t seed{ 0 };
+
+Player player;
+std::vector<Enemy> activeEnemies;
 
 // Forward Declarations of functions by order of appearance in the following code
 void UpdateAndDrawFrame();
 unsigned int SeedGenerator();
 void GenerateGround();
-void DisplayEnemies();
+void UpdateEnemies();
+void DrawEnemies(); // called by ^
 
 
 int testVariable{ 0 };
@@ -45,6 +48,7 @@ int testVariable{ 0 };
 int main()
 {
     InitWindow(1280, 720, "Tap Wizard"); //720p, should fit 1080p monitors without fullscreen well (as well as old ones with full screen
+    SetTargetFPS(120);
 
     for (int i = 0; i < 16; i++) // fills groundImages with tile_grass_0 to _15     // works only after InitWindow()
     {
@@ -67,19 +71,19 @@ int main()
             
             if (KEY_W)
             {
-                player.location.y -= 0.03;
+                player.location.y -= 0.1f * GetFrameTime();
             }
             if (KEY_A)
             {
-                player.location.x -= 0.03;
+                player.location.x -= 0.1f * GetFrameTime();
             }
             if (KEY_S)
             {
-                player.location.y += 0.03;
+                player.location.y += 0.1f * GetFrameTime();
             }
             if (KEY_D)
             {
-                player.location.x += 0.03;
+                player.location.x += 0.1f * GetFrameTime();
             }
     }
 
@@ -109,13 +113,19 @@ int main()
 void UpdateAndDrawFrame()
 {
     // Gameplay
-
+    //get input
+    //calculate stuff like spells
+    UpdateEnemies();
 
     // Displaying
+    BeginDrawing();
+
     GenerateGround();
     // DisplayPlayer
-    DisplayEnemies();
+    
     // DisplayEffects
+
+    EndDrawing();
 
     // DEBUG start
     if (IsKeyDown(KEY_W))
@@ -179,7 +189,7 @@ void GenerateGround() // -------------------------------------------------------
     int incrementorY{ 0 };
     int incrementorX{ 0 };
 
-    BeginDrawing(); // 1280, 720
+     // 1280, 720
 
     for (int i = center.y - 24 * 32; i < center.y + 24 * 32; i += 32) // for every y within screen + margin
     {
@@ -196,17 +206,50 @@ void GenerateGround() // -------------------------------------------------------
             incrementorX++;
         }
     }
-
-    EndDrawing();
 }
 
 //player
 
-/*
+// ENEMIES
+void UpdateEnemies()
+{
+    //death
+    for (Enemy& enemy : activeEnemies)
+    {
+        if (enemy.hp <= 0)
+        {
+            kill enemy (remove from activeEnemies)
+                also need: void UpdatePlayer
+        }
+    }
+
+    // movement
+    for (Enemy& enemy : activeEnemies)
+    {
+        if (enemy.relativePositionToPlayer.x < 0) // move in x direction
+        {
+            enemy.relativePositionToPlayer.x += 0.1 * enemy.speed * GetFrameTime(); // move towards 0 from negative
+        }
+        else
+        {
+            enemy.relativePositionToPlayer.x -= 0.1 * enemy.speed * GetFrameTime(); // move towards 0 from positive
+        }
+
+        if (enemy.relativePositionToPlayer.y < 0) // move in y direction
+        {
+            enemy.relativePositionToPlayer.y += 0.1 * enemy.speed * GetFrameTime(); // move towards 0 from negative
+        }
+        else
+        {
+            enemy.relativePositionToPlayer.y -= 0.1 * enemy.speed * GetFrameTime(); // move towards 0 from positive
+        }
+    }
+    
+}
+
 void DisplayEnemies()
 {
-    for (int i : )
     DrawTexture(enemyImages[image], player.location relativePositionToPlayer.x);
-}*/
+}
 
 //effects

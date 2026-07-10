@@ -22,8 +22,9 @@ public: //1280, 720
 class Enemy {
 public:
 
-	const int damage{};
 	const int image{};
+	const int damage{};
+	int speed{}; // 1 = normal speed      // COULD ADD FREEZE SPELL
 
 	Vector2 relativePositionToPlayer{};
 	int hp{};
