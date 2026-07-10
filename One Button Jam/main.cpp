@@ -27,13 +27,17 @@
 #include <emscripten.h>
 #endif
 
+// Global Variables
 Player player;
 Texture2D groundImages[16];
 uint64_t seed{ 0 };
 
+// Forward Declarations of functions by order of appearance in the following code
 void UpdateAndDrawFrame();
 unsigned int SeedGenerator();
 void GenerateGround();
+void DisplayEnemies();
+
 
 int testVariable{ 0 };
 
@@ -63,19 +67,19 @@ int main()
             
             if (KEY_W)
             {
-                player.location.y -= 1;
+                player.location.y -= 0.03;
             }
             if (KEY_A)
             {
-                player.location.x -= 1;
+                player.location.x -= 0.03;
             }
             if (KEY_S)
             {
-                player.location.y += 1;
+                player.location.y += 0.03;
             }
             if (KEY_D)
             {
-                player.location.x += 1;
+                player.location.x += 0.03;
             }
     }
 
@@ -104,7 +108,14 @@ int main()
 // everything outside of main (gameplay loops) - this verion's main(){} ------------------------------------------------------------------
 void UpdateAndDrawFrame()
 {
+    // Gameplay
+
+
+    // Displaying
     GenerateGround();
+    // DisplayPlayer
+    DisplayEnemies();
+    // DisplayEffects
 
     // DEBUG start
     if (IsKeyDown(KEY_W))
@@ -126,14 +137,12 @@ void UpdateAndDrawFrame()
     // DEBUG end
 }
 
-
-
 unsigned int SeedGenerator() // ------------------------------------------------------------------------------------------------------------------------
 {
     return(static_cast<unsigned int>(GetRandomValue(1'000'000'000, 2'000'000'000)));
 }
 
-
+// DISPLAYING STUFF
 
 void GenerateGround() // ------------------------------------------------------------------------------------------------------------------------
 {
@@ -141,7 +150,8 @@ void GenerateGround() // -------------------------------------------------------
     Vector2int center{};
 
     bool foundCenterTile{ false };
-    center = player.location;
+    center.x = static_cast<int>(player.location.x);
+    center.y = static_cast<int>(player.location.y);
 
     while (!foundCenterTile)
     {
@@ -178,10 +188,10 @@ void GenerateGround() // -------------------------------------------------------
 
         for (int j = center.x - 42 * 32; j < center.x + 42 * 32; j += 32) // for every x within screen + margin (y+x = all ground spots)
         {
-            // Pseudo Random Number Generator
+            // Pseudo Random Number Generator (when given the same seed and number it provides the same result)
             int randomTextureIndex = GetTileTextureIndex((j + i * 63246), seed);
 
-            DrawTexture(groundImages[randomTextureIndex], (-center.x) + j , (-center.y) + i , WHITE);
+            DrawTexture(groundImages[randomTextureIndex], (-player.location.x) + j , (-player.location.y) + i , WHITE); // draw the background around the player
 
             incrementorX++;
         }
@@ -189,3 +199,14 @@ void GenerateGround() // -------------------------------------------------------
 
     EndDrawing();
 }
+
+//player
+
+/*
+void DisplayEnemies()
+{
+    for (int i : )
+    DrawTexture(enemyImages[image], player.location relativePositionToPlayer.x);
+}*/
+
+//effects

@@ -11,7 +11,7 @@ public: //1280, 720
 	static constexpr Vector2int screenPos{ 640, 360 }; // middle of screen, HAS TO BE ADJUSTED FOR HALF OF PLAYER SIZE
 	//static constexpr Texture2D image{}; // ENTER IMAGE HERE ONCE READY
 
-	Vector2int location{ 1'500'000'000,1'500'000'000 };
+	Vector2 location{ 32'000,32'000 };
 	// old location remoced, could be possibly added for walking effects such as trailing dust (however that could be generated while walking and rise slowly)
 
 	int hp{ 100 };
@@ -23,9 +23,9 @@ class Enemy {
 public:
 
 	const int damage{};
-	const Texture2D image{};
+	const int image{};
 
-	Vector2int relativePositionToPlayer{};
+	Vector2 relativePositionToPlayer{};
 	int hp{};
 };
 
