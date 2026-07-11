@@ -58,8 +58,8 @@ Vector2 worldPosToScreenPos(Vector2 worldPosition);
 
 // DEBUG start
 Enemy testenemy1;
-//Enemy testenemy2;
-//Enemy testenemy3;
+Enemy testenemy2;
+Enemy testenemy3;
 
 // DEBUG end
 
@@ -86,22 +86,26 @@ int main()
 
     testenemy1.location.x = 31950;
     testenemy1.location.y = 31950;
-    //testenemy2.location.x = 300;
-    //testenemy2.location.y = 300;
-    //testenemy3.location.x = 0;
-    //testenemy3.location.y = 0;
+    testenemy2.location.x = 32100;
+    testenemy2.location.y = 32100;
+    testenemy3.location.x = 32100;
+    testenemy3.location.y = 31900;
 
     testenemy1.image = 0;
-    //testenemy2.image = 1;
-    //testenemy3.image = 2;
+    testenemy2.image = 1;
+    testenemy3.image = 2;
+
+    testenemy1.speed = 30;
+    testenemy2.speed = 40;
+    testenemy3.speed = 50;
 
     testenemy1.size = 16;
-    //testenemy2.size = 24;
-    //testenemy3.size = 32;
+    testenemy2.size = 24;
+    testenemy3.size = 32;
 
     activeEnemies.push_back(testenemy1);
-    //activeEnemies.push_back(testenemy2);
-    //activeEnemies.push_back(testenemy3);
+    activeEnemies.push_back(testenemy2);
+    activeEnemies.push_back(testenemy3);
 
     // DEBUG end
 
@@ -226,24 +230,20 @@ void UpdateEnemies()
     // movement
     for (Enemy& enemy : activeEnemies)
     {
-        
-        if (enemy.location.x < player.location.x) // move in x direction
-        {
-            enemy.location.x += 10 * enemy.speed * GetFrameTime(); // move towards 0 from negative x
-        }
-        else
-        {
-            enemy.location.x -= 10 * enemy.speed * GetFrameTime(); // move towards 0 from positive x
-        }
+        Vector2 tempDirection{ (player.location.x - enemy.location.x), (player.location.y - enemy.location.y) }; // get direction from enemy towards player
+        float tempDistance{ sqrtf(tempDirection.x * tempDirection.x + tempDirection.y * tempDirection.y) }; // get distance from enemy to player
 
-        if (enemy.location.y < player.location.y) // move in y direction
+        if (tempDistance >= 0.4) // if not inside player
         {
-            enemy.location.y += 10 * enemy.speed * GetFrameTime(); // move towards 0 from negative y
+            Vector2 tempNormalisedDirection{ tempDirection.x / tempDistance, tempDirection.y / tempDistance }; // get normalised direction (at what ratio to go into x/y direction)
+
+            // move enemy towards player
+            enemy.location.x += tempNormalisedDirection.x * enemy.speed * GetFrameTime();
+            enemy.location.y += tempNormalisedDirection.y * enemy.speed * GetFrameTime();
         }
-        else
-        {
-            enemy.location.y -= 10 * enemy.speed * GetFrameTime(); // move towards 0 from positive y
-        }
+        
+        
+        
     }
 
 }
@@ -288,12 +288,12 @@ void GenerateGround() // -------------------------------------------------------
 
      // 1280, 720
 
-    for (int i = center.y - 24 * 32; i < center.y + 24 * 32; i += 32) // for every y within screen + margin
+    for (int i = center.y - 90 * 32; i < center.y + 90 * 32; i += 32) // for every y within screen + margin
     {
         incrementorY++;
         incrementorX = 0;
 
-        for (int j = center.x - 42 * 32; j < center.x + 42 * 32; j += 32) // for every x within screen + margin (y+x = all ground spots)
+        for (int j = center.x - 90 * 32; j < center.x + 90 * 32; j += 32) // for every x within screen + margin (y+x = all ground spots)
         {
             // Pseudo Random Number Generator (when given the same seed and number it provides the same result)
             int randomTextureIndex = GetTileTextureIndex((j + i * 63246), seed);
