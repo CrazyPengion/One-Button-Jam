@@ -28,10 +28,12 @@
 #endif
 
 // Global Variables
-constexpr int screenWidth{ 1280 };
-constexpr int screenHeight{ 720 };
+constexpr int screenWidth{ 1280 }; //1280
+constexpr int screenHeight{ 720 }; //720
 
 Texture2D groundImages[16];
+Texture2D grassImages[16];
+Texture2D detailImage[4];
 Texture2D enemyImages[3];
 Texture2D playerImages[1];
 uint32_t seed{ 0 };
@@ -76,6 +78,17 @@ int main()
     {
         groundImages[i] = LoadTexture(TextFormat("assets/tile_grass_%d.png", i));
     }
+
+    for (int i = 0; i < 16; i++) // fills grassImages with detail_grass_0 to 8
+    {
+        grassImages[i] = LoadTexture(TextFormat("assets/detail_grass_%d.png", i));
+    }
+
+    for (int i = 0; i < 4; i++) // fills grassImages with detail_grass_0 to 8
+    {
+        detailImage[i] = LoadTexture(TextFormat("assets/detail_plus_%d.png", i));
+    }
+    
 
     for (int i = 0; i < 3; i++) // fills enemyImages with enemy_0 to 2
     {
@@ -145,14 +158,20 @@ int main()
     for (int i = 0; i < 16; i++) // unload ground images
     {
         UnloadTexture(groundImages[i]);
+        UnloadTexture(grassImages[i]);
     }
 
-    for (int i = 0; i < 16; i++) // unload enemy images
+    for (int i = 0; i < 4; i++) // unload grass images
+    {
+        UnloadTexture(detailImage[i]);
+    }
+
+    for (int i = 0; i < 3; i++) // unload enemy images
     {
         UnloadTexture(enemyImages[i]);
     }
 
-    for (int i = 0; i < 16; i++) // unload player images
+    for (int i = 0; i < 1; i++) // unload player images
     {
         UnloadTexture(playerImages[i]);
     }
@@ -285,17 +304,41 @@ void GenerateGround() // -------------------------------------------------------
     int incrementorY{ 0 };
     int incrementorX{ 0 };
 
-    for (int i = center.y - 1 * 32; i < center.y + 22 * 32; i += 32) // for every y within screen + margin
+    for (int i = center.y - 1 * 32; i < center.y + 22 * 32; i += 32) // for every y within screen + margin   //22 * 32;
     {
         incrementorY++;
         incrementorX = 0;
 
-        for (int j = center.x - 1 * 32; j < center.x + 39 * 32; j += 32) // for every x within screen + margin (y+x = all ground spots)
+        for (int j = center.x - 1 * 32; j < center.x + 39 * 32; j += 32) // for every x within screen + margin (y+x = all ground spots) //39 * 32;
         {
             // Pseudo Random Number Generator (when given the same seed and number it provides the same result)
-            int randomTextureIndex = GetTileTextureIndex((j + i * 63246), seed);
+            int randomTextureIndex = GetTileTextureIndex((j + i * 63246), seed, 15); // 15 = total texture amount
+            int grassCheck = GetTileTextureIndex((j + i * 63246), seed, 1); // for grass - 1 in 2
+            int detailCheck = GetTileTextureIndex((j + i * 63246), seed, 255); // for log - 1 in 256
 
             DrawTexture(groundImages[randomTextureIndex], (-player.location.x) + j , (-player.location.y) + i , WHITE); // draw the background around the player
+
+            if (grassCheck == 1)
+            { 
+                DrawTexture(grassImages[randomTextureIndex], (-player.location.x) + j, (-player.location.y) + i, WHITE);
+            }
+
+            if (detailCheck == 0)
+            {
+                DrawTexture(detailImage[0], (-player.location.x) + j, (-player.location.y) + i, WHITE);
+            }
+            else if (detailCheck == 1)
+            {
+                DrawTexture(detailImage[1], (-player.location.x) + j, (-player.location.y) + i, WHITE);
+            }
+            else if (detailCheck == 2)
+            {
+                DrawTexture(detailImage[2], (-player.location.x) + j, (-player.location.y) + i, WHITE);
+            }
+            else if (detailCheck == 3)
+            {
+                DrawTexture(detailImage[3], (-player.location.x) + j, (-player.location.y) + i, WHITE);
+            }
 
             incrementorX++;
         }
