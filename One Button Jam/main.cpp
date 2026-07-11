@@ -33,6 +33,7 @@ constexpr int screenHeight{ 720 };
 
 Texture2D groundImages[16];
 Texture2D enemyImages[3];
+Texture2D playerImages[1];
 uint32_t seed{ 0 };
 
 Player player;
@@ -43,12 +44,13 @@ void UpdateAndDrawFrame();
 unsigned int SeedGenerator();
 
 //LOGIC
+void GetInput();
 // void UpdatePlayer();
 void UpdateEnemies();
 
 //DRAWING
 void GenerateGround();
-// void DrawPlayer();
+void DisplayPlayer();
 void DisplayEnemies();
 // void DrawEffects();
 
@@ -80,10 +82,14 @@ int main()
         enemyImages[i] = LoadTexture(TextFormat("assets/enemy_%d.png", i));
     }
 
+    for (int i = 0; i < 1; i++) // fills playerImages with player_0 to 0
+    {
+        playerImages[i] = LoadTexture(TextFormat("assets/player_%d.png", i));
+    }
+
     seed = GetRandomValue(0, INT_MAX);
 
     // DEBUG start
-
     testenemy1.location.x = 31950;
     testenemy1.location.y = 31950;
     testenemy2.location.x = 32100;
@@ -95,9 +101,9 @@ int main()
     testenemy2.image = 1;
     testenemy3.image = 2;
 
-    testenemy1.speed = 30;
-    testenemy2.speed = 40;
-    testenemy3.speed = 50;
+    testenemy1.speed *= 3;
+    testenemy2.speed *= 4;
+    testenemy3.speed *= 5;
 
     testenemy1.size = 16;
     testenemy2.size = 24;
@@ -128,23 +134,6 @@ int main()
     while (!WindowShouldClose())
     {
             UpdateAndDrawFrame();
-            
-            if (KEY_W)
-            {
-                player.location.y -= 0.1f * GetFrameTime();
-            }
-            if (KEY_A)
-            {
-                player.location.x -= 0.1f * GetFrameTime();
-            }
-            if (KEY_S)
-            {
-                player.location.y += 0.1f * GetFrameTime();
-            }
-            if (KEY_D)
-            {
-                player.location.x += 0.1f * GetFrameTime();
-            }
     }
 
 
@@ -156,6 +145,16 @@ int main()
     for (int i = 0; i < 16; i++) // unload ground images
     {
         UnloadTexture(groundImages[i]);
+    }
+
+    for (int i = 0; i < 16; i++) // unload enemy images
+    {
+        UnloadTexture(enemyImages[i]);
+    }
+
+    for (int i = 0; i < 16; i++) // unload player images
+    {
+        UnloadTexture(playerImages[i]);
     }
 
     CloseWindow();
@@ -173,20 +172,32 @@ int main()
 void UpdateAndDrawFrame()
 {
     // Gameplay
-    //get input
+    GetInput();
     //calculate stuff like spells
     UpdateEnemies();
 
     // Displaying
+    
     BeginDrawing();
 
     GenerateGround();
-    // DisplayPlayer
+    DisplayPlayer();
     DisplayEnemies();
     // DisplayEffects
-    EndDrawing();
 
-    // DEBUG start
+    EndDrawing();
+}
+
+unsigned int SeedGenerator() // ------------------------------------------------------------------------------------------------------------------------
+{
+    return(static_cast<unsigned int>(GetRandomValue(1'000'000'000, 2'000'000'000)));
+}
+
+
+// MAIN LOGIC - first spells to potentially kill mobs before they kill player
+
+void GetInput()
+{ 
     if (IsKeyDown(KEY_W))
     {
         player.location.y -= 16;
@@ -203,22 +214,13 @@ void UpdateAndDrawFrame()
     {
         player.location.x += 16;
     }
-
-    // DEBUG end
 }
-
-unsigned int SeedGenerator() // ------------------------------------------------------------------------------------------------------------------------
-{
-    return(static_cast<unsigned int>(GetRandomValue(1'000'000'000, 2'000'000'000)));
-}
-
-
-// MAIN LOGIC - first spells to potentially kill mobs before they kill player
 
 // void UpdateSpells();
 
 // void UpdatePlayer();
 
+  // COMPLETE
 void UpdateEnemies()
 {
     // check if enemy died, if yes delete
@@ -241,19 +243,16 @@ void UpdateEnemies()
             enemy.location.x += tempNormalisedDirection.x * enemy.speed * GetFrameTime();
             enemy.location.y += tempNormalisedDirection.y * enemy.speed * GetFrameTime();
         }
-        
-        
-        
     }
-
 }
 
 
 // DISPLAYING STUFF - first background - last foreground
 
+  // complete
 void GenerateGround() // ------------------------------------------------------------------------------------------------------------------------
 {
-    // 1. GET THE CENTER TILE
+    // 1. Get the center tile
     Vector2int center{};
 
     bool foundCenterTile{ false };
@@ -281,19 +280,17 @@ void GenerateGround() // -------------------------------------------------------
         }
     }
 
-    // 2. RENDER TILES AROUND IT
+    // 2. Draw tiles around center tile
 
     int incrementorY{ 0 };
     int incrementorX{ 0 };
 
-     // 1280, 720
-
-    for (int i = center.y - 90 * 32; i < center.y + 90 * 32; i += 32) // for every y within screen + margin
+    for (int i = center.y - 1 * 32; i < center.y + 22 * 32; i += 32) // for every y within screen + margin
     {
         incrementorY++;
         incrementorX = 0;
 
-        for (int j = center.x - 90 * 32; j < center.x + 90 * 32; j += 32) // for every x within screen + margin (y+x = all ground spots)
+        for (int j = center.x - 1 * 32; j < center.x + 39 * 32; j += 32) // for every x within screen + margin (y+x = all ground spots)
         {
             // Pseudo Random Number Generator (when given the same seed and number it provides the same result)
             int randomTextureIndex = GetTileTextureIndex((j + i * 63246), seed);
@@ -305,9 +302,14 @@ void GenerateGround() // -------------------------------------------------------
     }
 }
 
-// void DisplayPlayer();
+void DisplayPlayer()
+{
+    // static png:
+    DrawTexture(playerImages[0], (screenWidth / 2  - 16), (screenHeight / 2 - 32), WHITE);
+}
 
-void DisplayEnemies() // 1280, 720
+  // complete
+void DisplayEnemies()
 {
     for (int i = 0; i < activeEnemies.size(); i++) // for all enemies
     {
@@ -320,11 +322,10 @@ void DisplayEnemies() // 1280, 720
             and tempLocation.y + activeEnemies[i].size > -(GetScreenHeight() / 2)) // further down than tom sceen edge
         {
             // draw enemy
-            Vector2 tempPosition = worldPosToScreenPos(activeEnemies[i].location);
-            tempPosition.x += (GetScreenWidth() / 2);
-            tempPosition.y += (GetScreenHeight() / 2);
+            Vector2 tempPosition = worldPosToScreenPos(activeEnemies[i].location); 
+            tempPosition.x += (GetScreenWidth() / 2 - 16); //-16 so that they go towards player middle
+            tempPosition.y += (GetScreenHeight() / 2 - 16);
             DrawTexture(enemyImages[activeEnemies[i].image], tempPosition.x, tempPosition.y, WHITE);
-            std::cout << "| " << tempPosition.x << " | " << tempPosition.y << " |\n";
         }
     }
     

@@ -25,10 +25,10 @@ public:
 	int image{}; // Not const as deleting algorithm (std::erase_if) complains if it is
 	int size{}; // used to only render images within screen
 	int damage{1}; //^
-	int speed{1}; // 1 = normal speed      // COULD ADD FREEZE SPELL
+	int speed{10}; // 30 = slow speed      // COULD ADD FREEZE SPELL
 
 	Vector2 location{};
-	int hp{1};
+	int hp{100};
 };
 
 class Spell
