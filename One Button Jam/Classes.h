@@ -32,6 +32,18 @@ public:
 	Vector2 location{};
 	float distanceToPlayer{100};
 	int hp{100};
+
+	// constuctor - for writing Enemy(image, size, ...) inside of code
+	Enemy(int cimage, int csize, int cdamage, int cspeed, int cxpDropAmount, Vector2 clocation, int chp)
+	{
+		image = cimage;
+		size = csize;
+		damage = cdamage;
+		speed = cspeed;
+		xpDropAmount = cxpDropAmount;
+		location = clocation;
+		hp = chp;
+	}
 };
 
 class Spell

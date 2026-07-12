@@ -54,6 +54,7 @@ void timeKeeper();
 void GetInput();
 // void UpdateSpells();
 void SpawnEnemies();
+Vector2 EnemySpawnCoordinates(); // called by SpawnEnemies();
 void UpdateEnemies();
 void UpdatePlayer();
 void Die(); // called by UpdatePlayer();
@@ -69,14 +70,6 @@ void DisplayUI();
 Vector2 worldPosToScreenPos(Vector2 worldPosition);
 
 
-// DEBUG start
-Enemy testenemy1;
-Enemy testenemy2;
-Enemy testenemy3;
-
-// DEBUG end
-
-int testVariable{ 0 };
 
 // main is only used for stuff to launch ONCE at start up - NO (infinite) LOOPS
 int main()
@@ -110,44 +103,6 @@ int main()
     }
 
     seed = GetRandomValue(0, INT_MAX);
-
-    // DEBUG start
-    testenemy1.location.x = 31950;
-    testenemy1.location.y = 31950;
-    testenemy2.location.x = 32100;
-    testenemy2.location.y = 32100;
-    testenemy3.location.x = 32100;
-    testenemy3.location.y = 31900;
-
-    testenemy1.image = 0;
-    testenemy2.image = 1;
-    testenemy3.image = 2;
-
-    testenemy1.speed *= 3;
-    testenemy2.speed *= 4;
-    testenemy3.speed *= 5;
-
-    testenemy1.size = 16;
-    testenemy2.size = 24;
-    testenemy3.size = 32;
-
-    activeEnemies.push_back(testenemy1);
-    activeEnemies.push_back(testenemy2);
-    activeEnemies.push_back(testenemy3);
-
-    // DEBUG end
-
-
-    /*
-    	int image{}; // Not const as deleting algorithm (std::erase_if) complains if it is
-	int damage{}; //^
-	int speed{}; // 1 = normal speed      // COULD ADD FREEZE SPELL
-
-	Vector2 location{};
-	int hp{};*/
-    
-
-
 
 #if defined(PLATFORM_WEB) // if on web => let browser set FPS and run (monitor native)
     emscripten_set_main_loop(UpdateAndDrawFrame, 0, 1);
@@ -254,17 +209,58 @@ void GetInput()
 
 // TODO void UpdateSpells();
 
+ // COMPLETE
 void SpawnEnemies()
+
 {
     // spawn enemies every 3 seconds
-    if (!gameClock.didEnemiesSpawnThisSecond and gameClock.secondsSinceStart % 3 == 0)
+    if (gameClock.didEnemiesSpawnThisSecond == false and gameClock.secondsSinceStart % 3 == 0)
     {
         int maxEnemySpawnAmount{ gameClock.secondsSinceStart / 2 }; // max enemies spawnes is tied to playtime
         int howManyEnemiesShouldSpawn{ GetRandomValue(0,maxEnemySpawnAmount) }; // get amount of enemies spawned
-        gameClock.didEnemiesSpawnThisSecond = true; // make sure it doesn't get triggered multiple time wihin the same second
+        if (howManyEnemiesShouldSpawn > 0)
+        {
+            for (int i{ 0 }; i < howManyEnemiesShouldSpawn; i++)
+            {
+                int temp{ GetRandomValue(0, howManyEnemiesShouldSpawn) };
 
-        TODO: MAKE maxEnemySpawnAmount ENEMIES SPAWN (DIFFERENT TYPES)
+                // large enemy
+                if (temp > 60)
+                { //(int image, int size, int damage, int speed, int xpDropAmount, Vector2 location, int hp)
+                    activeEnemies.push_back(Enemy(2, 40, 3, 30, 3, EnemySpawnCoordinates(), 80));
+                }
+
+                // medium enemy
+                else if (temp < 61 and temp > 30)
+                { //(int image, int size, int damage, int speed, int xpDropAmount, Vector2 location, int hp)
+                    activeEnemies.push_back(Enemy(1, 32, 2, 45, 2, EnemySpawnCoordinates(), 50));
+                }
+
+                // small enemy
+                else //(temp < 31)
+                { //(int image, int size, int damage, int speed, int xpDropAmount, Vector2 location, int hp)
+                    activeEnemies.push_back(Enemy(0, 24, 1, 60, 1, EnemySpawnCoordinates(), 30));
+                }
+                
+                gameClock.didEnemiesSpawnThisSecond = true;
+            }
+        }
+        else
+            gameClock.didEnemiesSpawnThisSecond = true;
     }
+
+}
+
+Vector2 EnemySpawnCoordinates()
+{
+    // only called right above it to get the coordinates of where to spawn enemies (slightly out of the window on all 4 sides)
+    float randomAngle = (float)GetRandomValue(0, 360) * DEG2RAD; // get a specific direction
+
+    Vector2 returnCoordinates;
+    returnCoordinates.x = cos(randomAngle) * 745.0f + player.location.x;
+    returnCoordinates.y = sin(randomAngle) * 745.0f + player.location.y;
+
+    return returnCoordinates;
 }
 
   // COMPLETE
