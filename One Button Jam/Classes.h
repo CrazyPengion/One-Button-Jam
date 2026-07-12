@@ -48,4 +48,13 @@ public:
 	}
 };
 
+class Clock
+{
+public:
+	float timeSinceFrame{ 0.0 };
+	int secondsSinceStart{ 0 };
+
+	bool didEnemiesSpawnThisSecond{ false };
+};
+
 #endif

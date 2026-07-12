@@ -41,15 +41,19 @@ uint32_t seed{ 0 };
 Player player;
 std::vector<Enemy> activeEnemies;
 
+Clock gameClock{};
+
 int DEBUG_DEATHS{ 0 };
+int DEBUG_TIME{ 0 };
 
 // Forward Declarations of functions by order of appearance in the following code
 void UpdateAndDrawFrame();
-unsigned int SeedGenerator();
 
 //LOGIC
+void timeKeeper();
 void GetInput();
 // void UpdateSpells();
+void SpawnEnemies();
 void UpdateEnemies();
 void UpdatePlayer();
 void Die(); // called by UpdatePlayer();
@@ -195,9 +199,11 @@ int main()
 // MAIN | GENERAL
 void UpdateAndDrawFrame()
 {
+    timeKeeper();
     // Gameplay
     GetInput();
     // UpdateSpells(); TODO
+    SpawnEnemies();
     UpdateEnemies();
     UpdatePlayer();
 
@@ -214,7 +220,16 @@ void UpdateAndDrawFrame()
     EndDrawing();
 }
 
-
+void timeKeeper()
+{
+    gameClock.timeSinceFrame += GetFrameTime();
+    if (gameClock.timeSinceFrame >= 1)
+    {
+        gameClock.secondsSinceStart += 1;
+        gameClock.timeSinceFrame--;
+        gameClock.didEnemiesSpawnThisSecond = false;
+    }
+}
 // MAIN LOGIC - first spells to potentially kill mobs before they kill player
 
 void GetInput()
@@ -238,6 +253,19 @@ void GetInput()
 }
 
 // TODO void UpdateSpells();
+
+void SpawnEnemies()
+{
+    // spawn enemies every 3 seconds
+    if (!gameClock.didEnemiesSpawnThisSecond and gameClock.secondsSinceStart % 3 == 0)
+    {
+        int maxEnemySpawnAmount{ gameClock.secondsSinceStart / 2 }; // max enemies spawnes is tied to playtime
+        int howManyEnemiesShouldSpawn{ GetRandomValue(0,maxEnemySpawnAmount) }; // get amount of enemies spawned
+        gameClock.didEnemiesSpawnThisSecond = true; // make sure it doesn't get triggered multiple time wihin the same second
+
+        TODO: MAKE maxEnemySpawnAmount ENEMIES SPAWN (DIFFERENT TYPES)
+    }
+}
 
   // COMPLETE
 void UpdateEnemies()
@@ -309,12 +337,18 @@ void UpdatePlayer()
     }
 }
 
+ // complete
 void Die()
 {
+    // reset player / world
     player = Player();
-    seed = GetRandomValue(0, INT_MAX);;
+    seed = GetRandomValue(0, INT_MAX);
     DEBUG_DEATHS++;
-    //TODO reset enemies / enemy spawner time or counter or whatever determines enemy amount
+
+    // reset enemies
+    activeEnemies.clear();
+    gameClock.timeSinceFrame = 0;
+    gameClock.secondsSinceStart = 0;
 }
 
 
