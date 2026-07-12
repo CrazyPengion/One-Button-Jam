@@ -8,5 +8,7 @@ With it being a learning project AI was used for: Web support ; Creating an Opti
 All ideas and art are man-made.
 
 Credits:
+
 Code & Design: CrazyPengion
+
 Art: Ondrej Hroch
