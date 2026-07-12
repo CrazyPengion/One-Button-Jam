@@ -14,8 +14,9 @@ public:
 	Vector2 location{ 32'000,32'000 };
 	// old location remoced, could be possibly added for walking effects such as trailing dust (however that could be generated while walking and rise slowly)
 
-	int hp{ 100 };
-	int level{ 0 };
+	int hp{ 1000 };
+	int level{ 1 };
+	int xpToNextLevel{ 10 };
 	int xp{ 0 };
 };
 
@@ -26,8 +27,10 @@ public:
 	int size{}; // used to only render images within screen
 	int damage{1}; //^
 	int speed{10}; // 30 = slow speed      // COULD ADD FREEZE SPELL
+	int xpDropAmount{ 1 };
 
 	Vector2 location{};
+	float distanceToPlayer{100};
 	int hp{100};
 };
 

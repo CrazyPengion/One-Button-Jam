@@ -41,20 +41,25 @@ uint32_t seed{ 0 };
 Player player;
 std::vector<Enemy> activeEnemies;
 
+int DEBUG_DEATHS{ 0 };
+
 // Forward Declarations of functions by order of appearance in the following code
 void UpdateAndDrawFrame();
 unsigned int SeedGenerator();
 
 //LOGIC
 void GetInput();
-// void UpdatePlayer();
+// void UpdateSpells();
 void UpdateEnemies();
+void UpdatePlayer();
+void Die(); // called by UpdatePlayer();
 
 //DRAWING
 void GenerateGround();
 void DisplayPlayer();
 void DisplayEnemies();
 // void DrawEffects();
+void DisplayUI();
 
 //UTILITY
 Vector2 worldPosToScreenPos(Vector2 worldPosition);
@@ -192,8 +197,9 @@ void UpdateAndDrawFrame()
 {
     // Gameplay
     GetInput();
-    //calculate stuff like spells
+    // UpdateSpells(); TODO
     UpdateEnemies();
+    UpdatePlayer();
 
     // Displaying
     
@@ -202,14 +208,10 @@ void UpdateAndDrawFrame()
     GenerateGround();
     DisplayPlayer();
     DisplayEnemies();
-    // DisplayEffects
+    // DisplayEffects TODO
+    DisplayUI();
 
     EndDrawing();
-}
-
-unsigned int SeedGenerator() // ------------------------------------------------------------------------------------------------------------------------
-{
-    return(static_cast<unsigned int>(GetRandomValue(1'000'000'000, 2'000'000'000)));
 }
 
 
@@ -235,13 +237,20 @@ void GetInput()
     }
 }
 
-// void UpdateSpells();
-
-// void UpdatePlayer();
+// TODO void UpdateSpells();
 
   // COMPLETE
 void UpdateEnemies()
 {
+    // check if enemy is dead, if yes award xp to player
+    for (const Enemy& enemy : activeEnemies)
+    {
+        if (enemy.hp <= 0)
+        {
+            player.xp += enemy.xpDropAmount;
+        }
+    }
+
     // check if enemy died, if yes delete
     std::erase_if(activeEnemies, [](const Enemy& x)
     {
@@ -252,17 +261,60 @@ void UpdateEnemies()
     for (Enemy& enemy : activeEnemies)
     {
         Vector2 tempDirection{ (player.location.x - enemy.location.x), (player.location.y - enemy.location.y) }; // get direction from enemy towards player
-        float tempDistance{ sqrtf(tempDirection.x * tempDirection.x + tempDirection.y * tempDirection.y) }; // get distance from enemy to player
+        enemy.distanceToPlayer = (sqrtf(tempDirection.x * tempDirection.x + tempDirection.y * tempDirection.y)); // get distance from enemy to player
 
-        if (tempDistance >= 0.4) // if not inside player
+        if (enemy.distanceToPlayer >= 0.4) // if not inside player
         {
-            Vector2 tempNormalisedDirection{ tempDirection.x / tempDistance, tempDirection.y / tempDistance }; // get normalised direction (at what ratio to go into x/y direction)
+            Vector2 tempNormalisedDirection{ tempDirection.x / enemy.distanceToPlayer, tempDirection.y / enemy.distanceToPlayer }; // get normalised direction (at what ratio to go into x/y direction)
 
             // move enemy towards player
             enemy.location.x += tempNormalisedDirection.x * enemy.speed * GetFrameTime();
             enemy.location.y += tempNormalisedDirection.y * enemy.speed * GetFrameTime();
         }
     }
+}
+
+void UpdatePlayer()
+{
+    // if mobs nearby - get damage
+    for (const Enemy& enemy : activeEnemies)
+    {
+        if (enemy.distanceToPlayer < 32)
+        {
+            player.hp -= enemy.damage * GetFrameTime();
+            // TODO DISPLAY HURT ANIMATION / OVERLAY / EFFECT
+        }
+
+        if (player.hp <= 0)
+        {
+            Die();
+        }
+    }
+    
+    // LEVELING
+    // 
+    // if enough xp for next level
+    if (player.xp >= player.xpToNextLevel)
+    {
+        player.level++;
+        player.xp -= player.xpToNextLevel;
+
+        // get xp to next level => 10 ; 30 ; 50 ; 100
+        if (player.level == 1)
+            player.xpToNextLevel = 30;
+        else if (player.level == 2)
+            player.xpToNextLevel == 50;
+        else if (player.level == 3)
+            player.xpToNextLevel = 100;
+    }
+}
+
+void Die()
+{
+    player = Player();
+    seed = GetRandomValue(0, INT_MAX);;
+    DEBUG_DEATHS++;
+    //TODO reset enemies / enemy spawner time or counter or whatever determines enemy amount
 }
 
 
@@ -374,7 +426,14 @@ void DisplayEnemies()
     
 }
 
-// void DisplaySpells();
+// TODO void DisplaySpells();
+
+void DisplayUI()
+{
+    
+    DrawText(TextFormat("Health: %d\nDeaths: %d", player.hp, DEBUG_DEATHS), 30, 30, 20, WHITE);
+    DrawText(TextFormat("XP: %d\nLevel: %d", player.xp, player.level), 180, 30, 20, WHITE);
+}
 
 // get coordinates where something should be displayed on screen from the world position
 // does NOT account for something being out of frame - always returns value
@@ -387,3 +446,7 @@ Vector2 worldPosToScreenPos(Vector2 worldPosition)
     
     return screenPosition;
 }
+
+//INFO:
+// "DEBUG" = delete before release, made for testing stuff
+// "TODO" = stuff that needs to be done / change / completed
