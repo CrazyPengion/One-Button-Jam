@@ -9,4 +9,11 @@ struct Vector2int
 	int y;
 };
 
+struct Click
+{
+	float timeSinceLastClick;
+	float clickDuration;
+	double timeAtClickStop;
+};
+
 #endif

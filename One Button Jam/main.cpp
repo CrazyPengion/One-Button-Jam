@@ -39,9 +39,12 @@ Texture2D playerImages[1];
 uint32_t seed{ 0 };
 
 Player player;
+std::vector<Click> currentClickPattern;
 std::vector<Enemy> activeEnemies;
 
 Clock gameClock{};
+double timeAtClickStart{ 0 };
+bool isKeyDown{ false };
 
 int DEBUG_DEATHS{ 0 };
 int DEBUG_TIME{ 0 };
@@ -50,9 +53,9 @@ int DEBUG_TIME{ 0 };
 void UpdateAndDrawFrame();
 
 //LOGIC
-void timeKeeper();
+void TimeKeeper();
 void GetInput();
-// void UpdateSpells();
+void CastSpells();
 void SpawnEnemies();
 Vector2 EnemySpawnCoordinates(); // called by SpawnEnemies();
 void UpdateEnemies();
@@ -154,16 +157,16 @@ int main()
 // MAIN | GENERAL
 void UpdateAndDrawFrame()
 {
-    timeKeeper();
+    TimeKeeper();
+
     // Gameplay
-    GetInput();
-    // UpdateSpells(); TODO
+    GetInput(); // contains DEBUG
+    CastSpells();
     SpawnEnemies();
     UpdateEnemies();
     UpdatePlayer();
 
     // Displaying
-    
     BeginDrawing();
 
     GenerateGround();
@@ -175,7 +178,7 @@ void UpdateAndDrawFrame()
     EndDrawing();
 }
 
-void timeKeeper()
+void TimeKeeper()
 {
     gameClock.timeSinceFrame += GetFrameTime();
     if (gameClock.timeSinceFrame >= 1)
@@ -189,6 +192,7 @@ void timeKeeper()
 
 void GetInput()
 { 
+    // DEBUG
     if (IsKeyDown(KEY_W))
     {
         player.location.y -= 16;
@@ -205,9 +209,50 @@ void GetInput()
     {
         player.location.x += 16;
     }
+    // DEBUG
+
+    // space press start
+    if (IsKeyDown(KEY_SPACE) and !isKeyDown)
+    {
+        timeAtClickStart = GetTime();
+        isKeyDown = true;
+    }
+
+    // space let go
+    if (IsKeyUp(KEY_SPACE) and isKeyDown == true)
+    {
+        double tempTime = GetTime(); // ensure quick reaction and that everything uses same time
+        isKeyDown = false; // ensure it gets registered a single time
+        Click tempClick;
+
+        tempClick.clickDuration = tempTime - timeAtClickStart;
+        tempClick.timeAtClickStop = tempTime;
+
+        if (!currentClickPattern.empty())
+        {
+            Click tempLastClick{ currentClickPattern.back() };
+
+            tempClick.timeSinceLastClick = tempTime - tempLastClick.timeAtClickStop;
+        }
+        else
+            tempClick.timeSinceLastClick = -1;
+        currentClickPattern.push_back(tempClick);
+    }
+
+    //for circling around player
+    /*
+        float randomAngle = (float)GetRandomValue(0, 360) * DEG2RAD; // get a specific direction
+
+    Vector2 returnCoordinates;
+    returnCoordinates.x = cos(randomAngle) * 745.0f + player.location.x;
+    returnCoordinates.y = sin(randomAngle) * 745.0f + player.location.y;
+    */
 }
 
-// TODO void UpdateSpells();
+void CastSpells()
+{
+
+}
 
  // COMPLETE
 void SpawnEnemies()
@@ -480,3 +525,58 @@ Vector2 worldPosToScreenPos(Vector2 worldPosition)
 //INFO:
 // "DEBUG" = delete before release, made for testing stuff
 // "TODO" = stuff that needs to be done / change / completed
+
+
+
+/*
+CLICK TYPES / COMBOS
+
+rules:
+1) You should be able to quickly able to tell commands appart
+2) Inputting shouldn't be too hard, however good for it to be challanging for OP attacks
+
+hold
+click hold
+click click hold
+click click click hold
+
+click wait click
+click wait hold
+click wait click wait click wait hold
+
+
+// spell name / description / difficulty
+Spells:
+Walk - min
+Menu/Pause - min
+(Cancel cast - min)
+
+Stomp - small splash around player - easy // med KNOCKBACK
+Dash - move 3 grids into the direction, inflict half damage - easy
+Canon ball - shoots in a straight line, low damage - easy
+Shockwave - Damanges and pushes enemies in a triangle shape from player, lower dmagem // low KNOCKBACK
+
+Lightning - activate lightning and then spam to spawn random lightning (insta kill, random location) - Medium
+Sawblades - spawn 2 sawblates spinning around you for x time - medium
+FIRE BALL - larger, stronger canon ball
+
+Teleport - teleport to a random spot in a circle (slightly larger than mob spawn circle) - hard
+God Ray - one shot wide laser      - max
+
+
+Extras (during different time as spells):
+
+- Main menu interactions
+- Change sound volume or mute
+- Select spell
+
+
+
+
+
+
+
+
+
+
+*/
