@@ -8,11 +8,13 @@ class Player
 {
 public:
 
-	Vector2int screenPos{ (GetScreenWidth() / 2), (GetScreenHeight() / 2)}; // middle of screen, HAS TO BE ADJUSTED FOR HALF OF PLAYER SIZE
-	//static constexpr Texture2D image{}; // ENTER IMAGE HERE ONCE READY
+	Vector2int screenPos{ (GetScreenWidth() / 2) - 16, (GetScreenHeight() / 2) - 32}; // middle of screen, HAS TO BE ADJUSTED FOR HALF OF PLAYER SIZE
 
 	Vector2 location{ 32'000,32'000 };
-	// old location remoced, could be possibly added for walking effects such as trailing dust (however that could be generated while walking and rise slowly)
+	Vector2 walkDirection{ 0,0 };
+	Vector2 velocity{ 0,0 };
+	bool isWalking{ false };
+	int speed{ 100 };
 
 	int hp{ 1000 };
 	int level{ 1 };

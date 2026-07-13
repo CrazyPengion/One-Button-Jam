@@ -45,6 +45,20 @@ std::vector<Enemy> activeEnemies;
 Clock gameClock{};
 double timeAtClickStart{ 0 };
 bool isKeyDown{ false };
+bool spellComplete{ false };
+
+// Spells
+float currentAngle{ 0 };
+Vector2 circleCoordinates;
+float radAngle{ 0 };
+int teleportFramesLeft{ 0 };
+Vector2 tempNewLocation{ 0 };
+void Spell_Stomp();
+int stompDuration{ 0 };
+void Spell_Dash();
+void Spell_Canon();
+void Spell_Saw();
+void Spell_FIREBALL();
 
 int DEBUG_DEATHS{ 0 };
 int DEBUG_TIME{ 0 };
@@ -57,7 +71,7 @@ void TimeKeeper();
 void GetInput();
 void CastSpells();
 void SpawnEnemies();
-Vector2 EnemySpawnCoordinates(); // called by SpawnEnemies();
+Vector2 EnemySpawnCoordinates(float distance); // called by SpawnEnemies();
 void UpdateEnemies();
 void UpdatePlayer();
 void Die(); // called by UpdatePlayer();
@@ -66,8 +80,14 @@ void Die(); // called by UpdatePlayer();
 void GenerateGround();
 void DisplayPlayer();
 void DisplayEnemies();
-// void DrawEffects();
+void DisplaySpells();
 void DisplayUI();
+
+//SPELLS
+Vector2 getProjectileDirection();
+void Spell_Walking();
+void teleportAnimation();
+
 
 //UTILITY
 Vector2 worldPosToScreenPos(Vector2 worldPosition);
@@ -150,10 +170,6 @@ int main()
 
 
 
-
-
-
-
 // MAIN | GENERAL
 void UpdateAndDrawFrame()
 {
@@ -169,10 +185,11 @@ void UpdateAndDrawFrame()
     // Displaying
     BeginDrawing();
 
+    ClearBackground(BLACK);
     GenerateGround();
     DisplayPlayer();
     DisplayEnemies();
-    // DisplayEffects TODO
+    DisplaySpells();
     DisplayUI();
 
     EndDrawing();
@@ -221,6 +238,7 @@ void GetInput()
     // space let go
     if (IsKeyUp(KEY_SPACE) and isKeyDown == true)
     {
+        std::cout << currentClickPattern.size();
         double tempTime = GetTime(); // ensure quick reaction and that everything uses same time
         isKeyDown = false; // ensure it gets registered a single time
         Click tempClick;
@@ -239,22 +257,140 @@ void GetInput()
         currentClickPattern.push_back(tempClick);
     }
 
-    //for circling around player
-    /*
-        float randomAngle = (float)GetRandomValue(0, 360) * DEG2RAD; // get a specific direction
-
-    Vector2 returnCoordinates;
-    returnCoordinates.x = cos(randomAngle) * 745.0f + player.location.x;
-    returnCoordinates.y = sin(randomAngle) * 745.0f + player.location.y;
-    */
+    // space let go after spell
+    if (spellComplete == true and IsKeyUp(KEY_SPACE) and !currentClickPattern.empty())
+    {
+        currentClickPattern.clear();
+        spellComplete = false;
+    }
+    
+    if (!currentClickPattern.empty())
+    {
+        if (IsKeyUp(KEY_SPACE) and IsKeyUp(KEY_SPACE) and GetTime() - currentClickPattern.back().timeAtClickStop >= 1)
+        {
+            currentClickPattern.clear();
+        }
+    }
+    
 }
 
 void CastSpells()
 {
 
+    if (isKeyDown)
+    {
+        if (GetTime() - timeAtClickStart > 0.25) // if holding SPACE (longerthan 0.25s)
+        {
+            /*
+            0: Book
+
+            2: Stomp     | 0
+            3: Dash      | 1
+            5: Canon Ball| 2
+            6: Sawblades | 3
+            10: Fire Ball| 4
+            15: Teleport | 5
+
+            */
+            if (currentClickPattern.empty()) //wizard book
+                int x;
+
+            else if (currentClickPattern.size() == 1) // walking
+            {
+                Spell_Walking();
+                spellComplete = true;
+            }
+
+            else if (currentClickPattern.size() == 2) // stomp
+            {
+                Spell_Stomp();
+            }
+
+            else if (currentClickPattern.size() == 3 and player.level >= 1) // dash
+            {
+                Spell_Dash();
+            }
+
+            else if (currentClickPattern.size() == 5 and player.level >= 2) // canonball
+            {
+                //Spell_Canon();
+                spellComplete = true;
+            }
+
+            else if (currentClickPattern.size() == 6 and player.level >= 3) // sawblades
+            {
+                //Spell_Saw();
+                spellComplete = true;
+            }
+
+            else if (currentClickPattern.size() == 10 and player.level >= 4) // fireball
+            {
+                //Spell_FIREBALL();
+                spellComplete = true;
+            }
+
+            else if (currentClickPattern.size() == 15 and player.level >= 5) // teleport
+            {
+                tempNewLocation = EnemySpawnCoordinates(800.0f);
+                currentClickPattern.clear();
+                teleportFramesLeft = 60;
+                player.location = tempNewLocation;
+            }
+        }
+    }
 }
 
- // COMPLETE
+// COMPLETE
+void Spell_Walking()
+{
+    // get relative position of circle and player
+    circleCoordinates.x = cosf(radAngle) * 50.0f + player.location.x;
+    circleCoordinates.y = sinf(radAngle) * 50.0f + player.location.y;
+
+    // get triangle leg lenght from player to circle
+    Vector2 tempDirection;
+    tempDirection.x = circleCoordinates.x - player.location.x;
+    tempDirection.y = circleCoordinates.y - player.location.y;
+
+    // get straight line distance from player to circle (hypotenuse)
+    float distance = sqrtf(tempDirection.x * tempDirection.x + tempDirection.y * tempDirection.y);
+
+    // normalize the vector
+    if (distance != 0.0f)
+    {
+        tempDirection.x /= distance;
+        tempDirection.y /= distance;
+    }
+
+    player.walkDirection = tempDirection;
+    player.isWalking = true;
+
+    player.velocity.x = player.walkDirection.x * player.speed;
+    player.velocity.y = player.walkDirection.y * player.speed;
+}
+
+void Spell_Stomp()
+{
+    if (spellComplete == false)
+    {
+        spellComplete = true;
+        Vector4 damageArea(player.location.x - 128, player.location.x + 128, player.location.y - 128, player.location.y + 128);
+        stompDuration = 30;
+        for (Enemy& enemy : activeEnemies) // & ==> Modify original value and not a copy!
+        {
+            if (enemy.location.x > damageArea.x and enemy.location.x < damageArea.y and enemy.location.y > damageArea.z and enemy.location.y < damageArea.w)
+            {
+                enemy.hp -= 15;
+                std::cout << enemy.hp;
+            }
+        }
+    }
+    
+}
+
+//void Spell_Dash();
+
+// COMPLETE
 void SpawnEnemies()
 
 {
@@ -272,21 +408,21 @@ void SpawnEnemies()
                 // large enemy
                 if (temp > 60)
                 { //(int image, int size, int damage, int speed, int xpDropAmount, Vector2 location, int hp)
-                    activeEnemies.push_back(Enemy(2, 40, 3, 30, 3, EnemySpawnCoordinates(), 80));
+                    activeEnemies.push_back(Enemy(2, 40, 3, 30, 3, EnemySpawnCoordinates(745.0f), 90));
                 }
 
                 // medium enemy
                 else if (temp < 61 and temp > 30)
                 { //(int image, int size, int damage, int speed, int xpDropAmount, Vector2 location, int hp)
-                    activeEnemies.push_back(Enemy(1, 32, 2, 45, 2, EnemySpawnCoordinates(), 50));
+                    activeEnemies.push_back(Enemy(1, 32, 2, 45, 2, EnemySpawnCoordinates(745.0f), 60));
                 }
 
                 // small enemy
                 else //(temp < 31)
                 { //(int image, int size, int damage, int speed, int xpDropAmount, Vector2 location, int hp)
-                    activeEnemies.push_back(Enemy(0, 24, 1, 60, 1, EnemySpawnCoordinates(), 30));
+                    activeEnemies.push_back(Enemy(0, 24, 1, 60, 1, EnemySpawnCoordinates(745.0f), 30));
                 }
-                
+
                 gameClock.didEnemiesSpawnThisSecond = true;
             }
         }
@@ -296,14 +432,15 @@ void SpawnEnemies()
 
 }
 
-Vector2 EnemySpawnCoordinates()
+ // COMPLETE 
+Vector2 EnemySpawnCoordinates(float distance)
 {
     // only called right above it to get the coordinates of where to spawn enemies (slightly out of the window on all 4 sides)
     float randomAngle = (float)GetRandomValue(0, 360) * DEG2RAD; // get a specific direction
 
     Vector2 returnCoordinates;
-    returnCoordinates.x = cos(randomAngle) * 745.0f + player.location.x;
-    returnCoordinates.y = sin(randomAngle) * 745.0f + player.location.y;
+    returnCoordinates.x = cos(randomAngle) * distance + player.location.x;
+    returnCoordinates.y = sin(randomAngle) * distance + player.location.y;
 
     return returnCoordinates;
 }
@@ -329,8 +466,13 @@ void UpdateEnemies()
     // movement
     for (Enemy& enemy : activeEnemies)
     {
-        Vector2 tempDirection{ (player.location.x - enemy.location.x), (player.location.y - enemy.location.y) }; // get direction from enemy towards player
+        Vector2 tempDirection{ (player.location.x + 8 - enemy.location.x), (player.location.y + 8 - enemy.location.y) }; // get direction from enemy towards player
         enemy.distanceToPlayer = (sqrtf(tempDirection.x * tempDirection.x + tempDirection.y * tempDirection.y)); // get distance from enemy to player
+
+        if (enemy.distanceToPlayer > 1000) // tp enemy around player if player is over 1000 pixels away (prevents running away)
+        {
+            enemy.location = EnemySpawnCoordinates(1000.0f); 
+        }
 
         if (enemy.distanceToPlayer >= 0.4) // if not inside player
         {
@@ -345,6 +487,26 @@ void UpdateEnemies()
 
 void UpdatePlayer()
 {
+    // teleport animation
+    if (teleportFramesLeft > 0)
+    {
+        player.location = EnemySpawnCoordinates(1000.0f);
+        teleportFramesLeft--;
+    }
+    if (teleportFramesLeft == 0 and tempNewLocation.x != -99999)
+    {
+        player.location = tempNewLocation;
+        tempNewLocation.x = -99999;
+    }
+
+    // walking
+    if (player.isWalking == true)
+    {
+        player.location.x += player.velocity.x * GetFrameTime();
+        player.location.y += player.velocity.y * GetFrameTime();
+    }
+
+
     // if mobs nearby - get damage
     for (const Enemy& enemy : activeEnemies)
     {
@@ -361,11 +523,12 @@ void UpdatePlayer()
     }
     
     // LEVELING
-    // 
+
     // if enough xp for next level
     if (player.xp >= player.xpToNextLevel)
     {
         player.level++;
+        player.hp += 1000; // get 1000, NOT fill to 1000 => rewards players for not loosing hp
         player.xp -= player.xpToNextLevel;
 
         // get xp to next level => 10 ; 30 ; 50 ; 100
@@ -431,12 +594,12 @@ void GenerateGround() // -------------------------------------------------------
     int incrementorY{ 0 };
     int incrementorX{ 0 };
 
-    for (int i = center.y - 1 * 32; i < center.y + 22 * 32; i += 32) // for every y within screen + margin   //22 * 32;
+    for (int i = center.y - 2 * 32; i < center.y + 22 * 32; i += 32) // for every y within screen + margin   //22 * 32;
     {
         incrementorY++;
         incrementorX = 0;
 
-        for (int j = center.x - 1 * 32; j < center.x + 39 * 32; j += 32) // for every x within screen + margin (y+x = all ground spots) //39 * 32;
+        for (int j = center.x - 2 * 32; j < center.x + 39 * 32; j += 32) // for every x within screen + margin (y+x = all ground spots) //39 * 32;
         {
             // Pseudo Random Number Generator (when given the same seed and number it provides the same result)
             int randomTextureIndex = GetTileTextureIndex((j + i * 63246), seed, 15); // 15 = total texture amount
@@ -501,7 +664,30 @@ void DisplayEnemies()
     
 }
 
-// TODO void DisplaySpells();
+void DisplaySpells()
+{
+    // circle floating around player
+    radAngle = currentAngle * DEG2RAD; // get a specific direction
+
+        // get circle position around player
+    circleCoordinates.x = cos(radAngle) * 50.0f + player.location.x + screenWidth / 2;
+    circleCoordinates.y = sin(radAngle) * 50.0f + player.location.y + screenHeight / 2;
+
+    circleCoordinates = worldPosToScreenPos(circleCoordinates);
+
+    DrawCircle(circleCoordinates.x, circleCoordinates.y, 5, RAYWHITE);
+
+    currentAngle += 120 * GetFrameTime();
+
+    // stomp
+    if (stompDuration > 0)
+    {
+        int opacity = stompDuration * 8;
+        std::cout << opacity << "\n";
+        DrawRectangle(screenWidth / 2 - 128, screenHeight / 2 - 128, 256, 256, Color{ 230, 41, 55, static_cast<unsigned char>(opacity) });
+        stompDuration--;
+    }
+}
 
 void DisplayUI()
 {
@@ -528,55 +714,17 @@ Vector2 worldPosToScreenPos(Vector2 worldPosition)
 
 
 
+
+
+
 /*
-CLICK TYPES / COMBOS
-
-rules:
-1) You should be able to quickly able to tell commands appart
-2) Inputting shouldn't be too hard, however good for it to be challanging for OP attacks
-
-hold
-click hold
-click click hold
-click click click hold
-
-click wait click
-click wait hold
-click wait click wait click wait hold
-
-
-// spell name / description / difficulty
-Spells:
-Walk - min
-Menu/Pause - min
-(Cancel cast - min)
-
 Stomp - small splash around player - easy // med KNOCKBACK
 Dash - move 3 grids into the direction, inflict half damage - easy
 Canon ball - shoots in a straight line, low damage - easy
-Shockwave - Damanges and pushes enemies in a triangle shape from player, lower dmagem // low KNOCKBACK
 
 Lightning - activate lightning and then spam to spawn random lightning (insta kill, random location) - Medium
 Sawblades - spawn 2 sawblates spinning around you for x time - medium
 FIRE BALL - larger, stronger canon ball
 
 Teleport - teleport to a random spot in a circle (slightly larger than mob spawn circle) - hard
-God Ray - one shot wide laser      - max
-
-
-Extras (during different time as spells):
-
-- Main menu interactions
-- Change sound volume or mute
-- Select spell
-
-
-
-
-
-
-
-
-
-
 */

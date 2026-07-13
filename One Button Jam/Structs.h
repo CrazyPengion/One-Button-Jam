@@ -14,6 +14,8 @@ struct Click
 	float timeSinceLastClick;
 	float clickDuration;
 	double timeAtClickStop;
+
+	bool isHold;
 };
 
 #endif
