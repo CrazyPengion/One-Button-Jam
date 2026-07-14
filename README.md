@@ -11,4 +11,4 @@ Credits:
 
 Code & Design: CrazyPengion
 
-Art: Ondrej Hroch
+Art & Sound: Ondrej Hroch
