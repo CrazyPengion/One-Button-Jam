@@ -519,7 +519,7 @@ void Spell_Walking(int mode) //mode 0 = autowak ; mode 1 = dash
 
 void Spell_Damage(int size, int damage)
 {
-    Vector4 damageArea(player.location.x - size, player.location.x + size, player.location.y - size, player.location.y + size);
+    Vector4 damageArea{ player.location.x - size, player.location.x + size, player.location.y - size, player.location.y + size };
 
     for (Enemy& enemy : activeEnemies) // & ==> Modify original value and not a copy!
     {
@@ -759,7 +759,7 @@ void UpdatePlayer()
         if (player.level == 1)
             player.xpToNextLevel = 30;
         else if (player.level == 2)
-            player.xpToNextLevel == 50;
+            player.xpToNextLevel = 50;
         else if (player.level == 3)
             player.xpToNextLevel = 100;
     }
