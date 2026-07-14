@@ -1,7 +1,7 @@
 /* TAP WIZARD
 
 * Premise:
-* This game is made for the One Button Jam 2026 (by Clyde) on Itch.io. 
+* This game is made for the One Button Jam 2026 (by Clyde) on Itch.io.
 * As the name says: only one button can be used as input (mouse movement / etc is not allowed, aside in menus).
 
 * Initial idea:
@@ -37,7 +37,7 @@ bool justClosedMenu{ false };
 bool displayBeginningTip{ true };
 
 constexpr int screenWidth{ 1280 }; //1280 x 720
-constexpr int screenHeight{ 720 }; 
+constexpr int screenHeight{ 720 };
 
 Texture2D groundImages[16];
 Texture2D grassImages[16];
@@ -159,7 +159,7 @@ int main()
     {
         detailImage[i] = LoadTexture(TextFormat("assets/detail_plus_%d.png", i));
     }
-    
+
 
     for (int i = 0; i < 4; i++) // fills enemyImages with enemy_0 to 2
     {
@@ -187,7 +187,7 @@ int main()
     SetTargetFPS(60);
     while (!WindowShouldClose())
     {
-            UpdateAndDrawFrame();
+        UpdateAndDrawFrame();
     }
 
 
@@ -275,7 +275,7 @@ void UpdateAndDrawFrame()
 
         EndDrawing();
     }
-    
+
     else if (pauseMenuOpen)
     {
         PauseMenu();
@@ -307,7 +307,7 @@ void PauseMenu()
     BeginDrawing(); // 768 x 512 //1280 x 720
     DrawTexture(wizardBook, (1280 - 768) / 2, (720 - 512) / 2, WHITE);
     EndDrawing();
-    
+
     displayBeginningTip = false;
 
     if (IsKeyPressed(KEY_SPACE))
@@ -336,7 +336,7 @@ void TimeKeeper()
 // MAIN LOGIC - first spells to potentially kill mobs before they kill player
 
 void GetInput()
-{ 
+{
     // space press start
     if (IsKeyDown(KEY_SPACE) and !isKeyDown)
     {
@@ -371,7 +371,7 @@ void GetInput()
         currentClickPattern.clear();
         spellComplete = false;
     }
-    
+
     if (!currentClickPattern.empty())
     {
         if (IsKeyUp(KEY_SPACE) and IsKeyUp(KEY_SPACE) and GetTime() - currentClickPattern.back().timeAtClickStop >= 1)
@@ -379,7 +379,7 @@ void GetInput()
             currentClickPattern.clear();
         }
     }
-    
+
 }
 
 void CastSpells()
@@ -399,7 +399,7 @@ void CastSpells()
                     currentClickPattern.clear();
                 }
             }
-            
+
             else if (currentClickPattern.size() == 1) // walking
             {
                 Spell_Walking(0);
@@ -475,7 +475,7 @@ void Spell_Walking(int mode) //mode 0 = autowak ; mode 1 = dash
         player.velocity.x = player.walkDirection.x * player.speed;
         player.velocity.y = player.walkDirection.y * player.speed;
     }
-    
+
     if (mode == 1) // dash
     {
         PlaySound(gameSounds[SND_SPELL_DASH]);
@@ -540,7 +540,7 @@ void Spell_Stomp()
 
         Spell_Damage(128, 15);
     }
-    
+
 }
 
 // COMPLETE
@@ -557,7 +557,7 @@ void SpawnEnemies()
             for (int i{ 0 }; i < howManyEnemiesShouldSpawn; i++)
             {
                 int temp{ GetRandomValue(0, howManyEnemiesShouldSpawn) };
-                
+
                 // giant enemy
                 if (temp > 120)
                 {
@@ -591,7 +591,7 @@ void SpawnEnemies()
 
 }
 
- // COMPLETE 
+// COMPLETE 
 Vector2 EnemySpawnCoordinates(float distance)
 {
     // only called right above it to get the coordinates of where to spawn enemies (slightly out of the window on all 4 sides)
@@ -605,7 +605,7 @@ Vector2 EnemySpawnCoordinates(float distance)
 }
 
 void UpdateBalls()
-{ 
+{
     if (flyingBalls.size() != 0)
     {
         // update ball location 
@@ -649,7 +649,7 @@ void UpdateBalls()
     }
 }
 
-  // COMPLETE
+// COMPLETE
 void UpdateEnemies()
 {
     // check if enemy is dead, if yes award xp to player
@@ -659,7 +659,7 @@ void UpdateEnemies()
         {
             player.xp += enemy.xpDropAmount;
             if (enemy.image == 0)
-            PlaySound(gameSounds[SND_ENEMY_DEATH_BEE]);
+                PlaySound(gameSounds[SND_ENEMY_DEATH_BEE]);
             if (enemy.image == 1)
                 PlaySound(gameSounds[SND_ENEMY_DEATH_SPIKY]);
             if (enemy.image == 2)
@@ -671,9 +671,9 @@ void UpdateEnemies()
 
     // check if enemy died, if yes delete
     std::erase_if(activeEnemies, [](const Enemy& x)
-    {
-        return x.hp <= 0;
-    });
+        {
+            return x.hp <= 0;
+        });
 
     // movement
     for (Enemy& enemy : activeEnemies)
@@ -683,7 +683,7 @@ void UpdateEnemies()
 
         if (enemy.distanceToPlayer > 1000) // tp enemy around player if player is over 1000 pixels away (prevents running away)
         {
-            enemy.location = EnemySpawnCoordinates(1000.0f); 
+            enemy.location = EnemySpawnCoordinates(1000.0f);
         }
 
         if (enemy.distanceToPlayer >= 0.4) // if not inside player
@@ -714,7 +714,7 @@ void UpdatePlayer()
     }
 
     // dash
-    if (dashBoostDuration > 0) 
+    if (dashBoostDuration > 0)
     {
         player.location.x += player.velocity.x * GetFrameTime() * dashBoost;
         player.location.y += player.velocity.y * GetFrameTime() * dashBoost;
@@ -744,7 +744,7 @@ void UpdatePlayer()
             Die();
         }
     }
-    
+
     // LEVELING
 
     // if enough xp for next level
@@ -765,7 +765,7 @@ void UpdatePlayer()
     }
 }
 
- // complete
+// complete
 void Die()
 {
     PlaySound(gameSounds[SND_PLAYER_DEATH]);
@@ -831,10 +831,10 @@ void GenerateGround() // -------------------------------------------------------
             int grassCheck = GetTileTextureIndex((j + i * 63246), seed, 1); // for grass - 1 in 2
             int detailCheck = GetTileTextureIndex((j + i * 63246), seed, 255); // for log - 1 in 256
 
-            DrawTexture(groundImages[randomTextureIndex], (-player.location.x) + j , (-player.location.y) + i , WHITE); // draw the background around the player
+            DrawTexture(groundImages[randomTextureIndex], (-player.location.x) + j, (-player.location.y) + i, WHITE); // draw the background around the player
 
             if (grassCheck == 1)
-            { 
+            {
                 DrawTexture(grassImages[randomTextureIndex], (-player.location.x) + j, (-player.location.y) + i, WHITE);
             }
 
@@ -863,10 +863,10 @@ void GenerateGround() // -------------------------------------------------------
 void DisplayPlayer()
 {
     // static png:
-    DrawTexture(playerImages[0], (screenWidth / 2  - 16), (screenHeight / 2 - 32), WHITE);
+    DrawTexture(playerImages[0], (screenWidth / 2 - 16), (screenHeight / 2 - 32), WHITE);
 }
 
-  // complete
+// complete
 void DisplayEnemies()
 {
     for (int i = 0; i < activeEnemies.size(); i++) // for all enemies
@@ -880,13 +880,13 @@ void DisplayEnemies()
             and tempLocation.y + activeEnemies[i].size > -(GetScreenHeight() / 2)) // further down than tom sceen edge
         {
             // draw enemy
-            Vector2 tempPosition = worldPosToScreenPos(activeEnemies[i].location); 
+            Vector2 tempPosition = worldPosToScreenPos(activeEnemies[i].location);
             tempPosition.x += (GetScreenWidth() / 2 - 16); //-16 so that they go towards player middle
             tempPosition.y += (GetScreenHeight() / 2 - 16);
             DrawTexture(enemyImages[activeEnemies[i].image], tempPosition.x, tempPosition.y, WHITE);
         }
     }
-    
+
 }
 
 void DisplaySpells()
@@ -894,7 +894,7 @@ void DisplaySpells()
     // circle floating around player
     radAngle = currentAngle * DEG2RAD; // get a specific direction
 
-        // get circle position around player
+    // get circle position around player
     circleCoordinates.x = cos(radAngle) * 50.0f + player.location.x + screenWidth / 2;
     circleCoordinates.y = sin(radAngle) * 50.0f + player.location.y + screenHeight / 2;
 
@@ -921,11 +921,11 @@ void DisplaySpells()
             Vector2 tempScreenPos = worldPosToScreenPos(ball.location);
             tempScreenPos.x += screenWidth / 2;
             tempScreenPos.y += screenHeight / 2;
-            
+
             DrawTextureV(spellImages[ball.image], tempScreenPos, WHITE);
         }
     }
-    
+
 }
 
 void DisplayUI()
@@ -957,7 +957,7 @@ Vector2 worldPosToScreenPos(Vector2 worldPosition)
 
     screenPosition.x = worldPosition.x - player.location.x;
     screenPosition.y = worldPosition.y - player.location.y;
-    
+
     return screenPosition;
 }
 
