@@ -5,7 +5,7 @@ This project was made with the goal of improving my programming skills, which me
 
 With it being a learning project AI was used for: Web support ; Creating an Optimal Pseudo Random Number Generator ; Getting Vector Math Formulas ; General  questions / explanations / debugging
 
-All ideas and art are man-made.
+All ideas, sounds and art are man-made.
 
 Credits:
 
