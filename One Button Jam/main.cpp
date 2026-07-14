@@ -16,8 +16,6 @@
 * Gemini was primarily used for web compartablity.
 */
 
-#include <iostream> // DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG 
-
 #include <random>
 #include "Classes.h" // also includes "Structs.h"
 #include "Generator.h"
@@ -28,14 +26,25 @@
 #endif
 
 // Global Variables
-constexpr int screenWidth{ 1280 }; //1280
-constexpr int screenHeight{ 720 }; //720
+bool mainMenuOpen{ true };
+void MainMenu();
+void PauseMenu();
+int textWidthTitle{ 0 };
+int textWidthSmall{ 0 };
+bool pauseMenuOpen{ false };
+Texture2D wizardBook;
+bool justClosedMenu{ false };
+bool displayBeginningTip{ true };
+
+constexpr int screenWidth{ 1280 }; //1280 x 720
+constexpr int screenHeight{ 720 }; 
 
 Texture2D groundImages[16];
 Texture2D grassImages[16];
 Texture2D detailImage[4];
-Texture2D enemyImages[3];
+Texture2D enemyImages[4];
 Texture2D playerImages[1];
+Texture2D spellImages[2];
 uint32_t seed{ 0 };
 
 Player player;
@@ -47,23 +56,60 @@ double timeAtClickStart{ 0 };
 bool isKeyDown{ false };
 bool spellComplete{ false };
 
-// Spells
+
+//SPELLS
+Vector2 getProjectileDirection();
+
+void Spell_Walking(int mode);
+void Spell_Damage(int size, int damage);
+
+// Circle aimer
 float currentAngle{ 0 };
 Vector2 circleCoordinates;
 float radAngle{ 0 };
-int teleportFramesLeft{ 0 };
-Vector2 tempNewLocation{ 0 };
+
+// Stomp
 void Spell_Stomp();
 int stompDuration{ 0 };
-void Spell_Dash();
-void Spell_Canon();
-void Spell_Saw();
-void Spell_FIREBALL();
+
+// Dash
+int dashBoostDuration{ 0 };
+constexpr int dashBoost{ 10 };
+
+// Canon ball | FIREBALL
+std::vector<FlyingBall> flyingBalls;
+void UpdateBalls();
+
+// Teleport
+void teleportAnimation();
+Vector2 tempNewLocation{ 0 };
+int teleportFramesLeft{ 0 };
+int oldHp{ 1000 };
 
 int DEBUG_DEATHS{ 0 };
-int DEBUG_TIME{ 0 };
+
+// SOUNDS
+
+enum GameSoundID {
+    SND_ENEMY_DEATH_BEE,
+    SND_ENEMY_DEATH_SKELETON,
+    SND_ENEMY_DEATH_SPIDER,
+    SND_ENEMY_DEATH_SPIKY,
+    SND_PLAYER_DAMAGE,
+    SND_PLAYER_DEATH,
+    SND_PLAYER_LEVELUP,
+    SND_SPELL_CANNONBALL,
+    SND_SPELL_DASH,
+    SND_SPELL_FIREBALL,
+    SND_SPELL_STOMP,
+    SND_SPELL_TELEPORT,
+    SND_COUNT
+};
+
+std::vector<Sound> gameSounds;
 
 // Forward Declarations of functions by order of appearance in the following code
+void LoadGameSounds();
 void UpdateAndDrawFrame();
 
 //LOGIC
@@ -83,12 +129,6 @@ void DisplayEnemies();
 void DisplaySpells();
 void DisplayUI();
 
-//SPELLS
-Vector2 getProjectileDirection();
-void Spell_Walking();
-void teleportAnimation();
-
-
 //UTILITY
 Vector2 worldPosToScreenPos(Vector2 worldPosition);
 
@@ -98,6 +138,12 @@ Vector2 worldPosToScreenPos(Vector2 worldPosition);
 int main()
 {
     InitWindow(screenWidth, screenHeight, "Tap Wizard"); //720p, should fit 1080p monitors without fullscreen well (as well as old ones with full screen
+    InitAudioDevice();
+    LoadGameSounds();
+    int tempTextWidth{ MeasureText("Tap Wizard", 120) };
+    textWidthTitle = tempTextWidth;
+    tempTextWidth = MeasureText("PRESS [SPACE] TO START", 30);
+    textWidthSmall = tempTextWidth;
 
     for (int i = 0; i < 16; i++) // fills groundImages with tile_grass_0 to _15     // works only after InitWindow()
     {
@@ -115,7 +161,7 @@ int main()
     }
     
 
-    for (int i = 0; i < 3; i++) // fills enemyImages with enemy_0 to 2
+    for (int i = 0; i < 4; i++) // fills enemyImages with enemy_0 to 2
     {
         enemyImages[i] = LoadTexture(TextFormat("assets/enemy_%d.png", i));
     }
@@ -124,6 +170,14 @@ int main()
     {
         playerImages[i] = LoadTexture(TextFormat("assets/player_%d.png", i));
     }
+
+    for (int i = 0; i < 2; i++) // fills spellImageswith spell_0 to 1
+    {
+        spellImages[i] = LoadTexture(TextFormat("assets/spell_%d.png", i));
+    }
+
+    Texture2D tempWizardBook = LoadTexture(TextFormat("assets/wizard_book.png"));
+    wizardBook = tempWizardBook;
 
     seed = GetRandomValue(0, INT_MAX);
 
@@ -153,7 +207,7 @@ int main()
         UnloadTexture(detailImage[i]);
     }
 
-    for (int i = 0; i < 3; i++) // unload enemy images
+    for (int i = 0; i < 4; i++) // unload enemy images
     {
         UnloadTexture(enemyImages[i]);
     }
@@ -163,36 +217,110 @@ int main()
         UnloadTexture(playerImages[i]);
     }
 
+    UnloadTexture(wizardBook);
+
+    for (Sound& sound : gameSounds)
+    {
+        UnloadSound(sound);
+    }
+    gameSounds.clear();
+
+    CloseAudioDevice();
     CloseWindow();
     return 0;
 }
 
+void LoadGameSounds()
+{
+    gameSounds.resize(SND_COUNT);
 
-
+    gameSounds[SND_ENEMY_DEATH_BEE] = LoadSound("sounds/enemy_death_bee.wav");
+    gameSounds[SND_ENEMY_DEATH_SKELETON] = LoadSound("sounds/enemy_death_skeleton.wav");
+    gameSounds[SND_ENEMY_DEATH_SPIDER] = LoadSound("sounds/enemy_death_spider.wav");
+    gameSounds[SND_ENEMY_DEATH_SPIKY] = LoadSound("sounds/enemy_death_spiky.wav");
+    gameSounds[SND_PLAYER_DAMAGE] = LoadSound("sounds/player_damage.wav");
+    gameSounds[SND_PLAYER_DEATH] = LoadSound("sounds/player_death.wav");
+    gameSounds[SND_PLAYER_LEVELUP] = LoadSound("sounds/player_levelup.wav");
+    gameSounds[SND_SPELL_CANNONBALL] = LoadSound("sounds/spell_cannonball.wav");
+    gameSounds[SND_SPELL_DASH] = LoadSound("sounds/spell_dash.wav");
+    gameSounds[SND_SPELL_FIREBALL] = LoadSound("sounds/spell_fireball.wav");
+    gameSounds[SND_SPELL_STOMP] = LoadSound("sounds/spell_stomp.wav");
+    gameSounds[SND_SPELL_TELEPORT] = LoadSound("sounds/spell_teleport.wav");
+}
 
 // MAIN | GENERAL
 void UpdateAndDrawFrame()
 {
-    TimeKeeper();
+    if (mainMenuOpen == false and pauseMenuOpen == false)
+    {
+        TimeKeeper();
 
-    // Gameplay
-    GetInput(); // contains DEBUG
-    CastSpells();
-    SpawnEnemies();
-    UpdateEnemies();
-    UpdatePlayer();
+        // Gameplay
+        GetInput();
+        CastSpells();
+        SpawnEnemies();
+        UpdateBalls();
+        UpdateEnemies();
+        UpdatePlayer();
 
-    // Displaying
+        // Displaying
+        BeginDrawing();
+
+        ClearBackground(BLACK);
+        GenerateGround();
+        DisplayPlayer();
+        DisplayEnemies();
+        DisplaySpells();
+        DisplayUI();
+
+        EndDrawing();
+    }
+    
+    else if (pauseMenuOpen)
+    {
+        PauseMenu();
+    }
+
+    else if (mainMenuOpen)
+    {
+        MainMenu();
+    }
+}
+
+void MainMenu()
+{
+    if (IsKeyReleased(KEY_SPACE))
+    {
+        PlaySound(gameSounds[SND_PLAYER_LEVELUP]);
+        mainMenuOpen = false;
+    }
     BeginDrawing();
-
-    ClearBackground(BLACK);
     GenerateGround();
-    DisplayPlayer();
-    DisplayEnemies();
-    DisplaySpells();
-    DisplayUI();
-
+    DrawText("Tap Wizard", (screenWidth / 2) - (textWidthTitle / 2), screenHeight / 2 - 130, 120, RAYWHITE);
+    DrawText("PRESS [SPACE] TO START", (screenWidth / 2) - (textWidthSmall / 2), screenHeight / 2 + 40, 30, RAYWHITE);
     EndDrawing();
+    player.location.y += 20 * GetFrameTime();
+}
+
+void PauseMenu()
+{
+    BeginDrawing(); // 768 x 512 //1280 x 720
+    DrawTexture(wizardBook, (1280 - 768) / 2, (720 - 512) / 2, WHITE);
+    EndDrawing();
+    
+    displayBeginningTip = false;
+
+    if (IsKeyPressed(KEY_SPACE))
+    {
+        justClosedMenu = true;
+    }
+
+    if (justClosedMenu == true and IsKeyReleased(KEY_SPACE))
+    {
+        pauseMenuOpen = false;
+        justClosedMenu = false;
+        currentClickPattern.clear();
+    }
 }
 
 void TimeKeeper()
@@ -209,25 +337,6 @@ void TimeKeeper()
 
 void GetInput()
 { 
-    // DEBUG
-    if (IsKeyDown(KEY_W))
-    {
-        player.location.y -= 16;
-    }
-    if (IsKeyDown(KEY_S))
-    {
-        player.location.y += 16;
-    }
-    if (IsKeyDown(KEY_A))
-    {
-        player.location.x -= 16;
-    }
-    if (IsKeyDown(KEY_D))
-    {
-        player.location.x += 16;
-    }
-    // DEBUG
-
     // space press start
     if (IsKeyDown(KEY_SPACE) and !isKeyDown)
     {
@@ -238,7 +347,6 @@ void GetInput()
     // space let go
     if (IsKeyUp(KEY_SPACE) and isKeyDown == true)
     {
-        std::cout << currentClickPattern.size();
         double tempTime = GetTime(); // ensure quick reaction and that everything uses same time
         isKeyDown = false; // ensure it gets registered a single time
         Click tempClick;
@@ -281,23 +389,20 @@ void CastSpells()
     {
         if (GetTime() - timeAtClickStart > 0.25) // if holding SPACE (longerthan 0.25s)
         {
-            /*
-            0: Book
-
-            2: Stomp     | 0
-            3: Dash      | 1
-            5: Canon Ball| 2
-            6: Sawblades | 3
-            10: Fire Ball| 4
-            15: Teleport | 5
-
-            */
             if (currentClickPattern.empty()) //wizard book
-                int x;
+            {
+                player.isWalking = false;
 
+                if (GetTime() - timeAtClickStart > 0.5)
+                {
+                    pauseMenuOpen = true;
+                    currentClickPattern.clear();
+                }
+            }
+            
             else if (currentClickPattern.size() == 1) // walking
             {
-                Spell_Walking();
+                Spell_Walking(0);
                 spellComplete = true;
             }
 
@@ -306,42 +411,42 @@ void CastSpells()
                 Spell_Stomp();
             }
 
-            else if (currentClickPattern.size() == 3 and player.level >= 1) // dash
+            else if (currentClickPattern.size() == 3 and player.level >= 2 and spellComplete == false) // dash
             {
-                Spell_Dash();
+                Spell_Walking(1);
             }
 
-            else if (currentClickPattern.size() == 5 and player.level >= 2) // canonball
+            else if (currentClickPattern.size() == 5 and player.level >= 3 and spellComplete == false) // canonball 3
             {
-                //Spell_Canon();
-                spellComplete = true;
+                PlaySound(gameSounds[SND_SPELL_CANNONBALL]);
+                Spell_Walking(2);
             }
 
-            else if (currentClickPattern.size() == 6 and player.level >= 3) // sawblades
+            else if (currentClickPattern.size() == 10 and player.level >= 4 and spellComplete == false) // fireball 4
             {
-                //Spell_Saw();
-                spellComplete = true;
+                PlaySound(gameSounds[SND_SPELL_FIREBALL]);
+                Spell_Walking(3);
             }
 
-            else if (currentClickPattern.size() == 10 and player.level >= 4) // fireball
+            else if (currentClickPattern.size() == 15 and player.level >= 5 and spellComplete == false) // teleport 5
             {
-                //Spell_FIREBALL();
-                spellComplete = true;
-            }
-
-            else if (currentClickPattern.size() == 15 and player.level >= 5) // teleport
-            {
+                PlaySound(gameSounds[SND_SPELL_TELEPORT]);
                 tempNewLocation = EnemySpawnCoordinates(800.0f);
                 currentClickPattern.clear();
                 teleportFramesLeft = 60;
-                player.location = tempNewLocation;
+                oldHp = player.hp;
+            }
+
+            else if (currentClickPattern.size() > 15)
+            {
+                currentClickPattern.clear();
             }
         }
     }
 }
 
 // COMPLETE
-void Spell_Walking()
+void Spell_Walking(int mode) //mode 0 = autowak ; mode 1 = dash
 {
     // get relative position of circle and player
     circleCoordinates.x = cosf(radAngle) * 50.0f + player.location.x;
@@ -362,33 +467,81 @@ void Spell_Walking()
         tempDirection.y /= distance;
     }
 
-    player.walkDirection = tempDirection;
-    player.isWalking = true;
+    if (mode == 0) // walk
+    {
+        player.walkDirection = tempDirection;
+        player.isWalking = true;
 
-    player.velocity.x = player.walkDirection.x * player.speed;
-    player.velocity.y = player.walkDirection.y * player.speed;
+        player.velocity.x = player.walkDirection.x * player.speed;
+        player.velocity.y = player.walkDirection.y * player.speed;
+    }
+    
+    if (mode == 1) // dash
+    {
+        PlaySound(gameSounds[SND_SPELL_DASH]);
+        spellComplete = true;
+        dashBoostDuration = 5;
+        player.walkDirection = tempDirection;
+        player.velocity.x = player.walkDirection.x * player.speed;
+        player.velocity.y = player.walkDirection.y * player.speed;
+    }
+
+    if (mode == 2) // canon ball
+    {
+        FlyingBall tempBall;
+        tempBall.image = 0;
+        tempBall.damage = 45;
+        tempBall.range = 32;
+        tempBall.location = player.location;
+        tempBall.speed = 300;
+        tempBall.maxDistance = 1000;
+        tempBall.direction = tempDirection; // Assign here
+
+        flyingBalls.push_back(tempBall);
+        spellComplete = true;
+    }
+
+    if (mode == 3) // FIREBALL
+    {
+        FlyingBall tempBall;
+        tempBall.image = 1;
+        tempBall.damage = 90;
+        tempBall.range = 64;
+        tempBall.location = player.location;
+        tempBall.speed = 500; // Don't forget to set speed for the fireball too!
+        tempBall.maxDistance = 500; // Set a maximum travel distance
+        tempBall.direction = tempDirection; // Assign here
+
+        flyingBalls.push_back(tempBall);
+        spellComplete = true;
+    }
+}
+
+void Spell_Damage(int size, int damage)
+{
+    Vector4 damageArea(player.location.x - size, player.location.x + size, player.location.y - size, player.location.y + size);
+
+    for (Enemy& enemy : activeEnemies) // & ==> Modify original value and not a copy!
+    {
+        if (enemy.location.x > damageArea.x and enemy.location.x < damageArea.y and enemy.location.y > damageArea.z and enemy.location.y < damageArea.w)
+        {
+            enemy.hp -= damage;
+        }
+    }
 }
 
 void Spell_Stomp()
 {
     if (spellComplete == false)
     {
+        PlaySound(gameSounds[SND_SPELL_STOMP]);
         spellComplete = true;
-        Vector4 damageArea(player.location.x - 128, player.location.x + 128, player.location.y - 128, player.location.y + 128);
         stompDuration = 30;
-        for (Enemy& enemy : activeEnemies) // & ==> Modify original value and not a copy!
-        {
-            if (enemy.location.x > damageArea.x and enemy.location.x < damageArea.y and enemy.location.y > damageArea.z and enemy.location.y < damageArea.w)
-            {
-                enemy.hp -= 15;
-                std::cout << enemy.hp;
-            }
-        }
+
+        Spell_Damage(128, 15);
     }
     
 }
-
-//void Spell_Dash();
 
 // COMPLETE
 void SpawnEnemies()
@@ -404,17 +557,23 @@ void SpawnEnemies()
             for (int i{ 0 }; i < howManyEnemiesShouldSpawn; i++)
             {
                 int temp{ GetRandomValue(0, howManyEnemiesShouldSpawn) };
+                
+                // giant enemy
+                if (temp > 120)
+                {
+                    activeEnemies.push_back(Enemy(3, 32, 5, 45, 5, EnemySpawnCoordinates(745.0f), 150));
+                }
 
                 // large enemy
-                if (temp > 60)
+                else if (temp < 121 and temp > 60)
                 { //(int image, int size, int damage, int speed, int xpDropAmount, Vector2 location, int hp)
-                    activeEnemies.push_back(Enemy(2, 40, 3, 30, 3, EnemySpawnCoordinates(745.0f), 90));
+                    activeEnemies.push_back(Enemy(2, 40, 3, 40, 3, EnemySpawnCoordinates(745.0f), 90));
                 }
 
                 // medium enemy
                 else if (temp < 61 and temp > 30)
                 { //(int image, int size, int damage, int speed, int xpDropAmount, Vector2 location, int hp)
-                    activeEnemies.push_back(Enemy(1, 32, 2, 45, 2, EnemySpawnCoordinates(745.0f), 60));
+                    activeEnemies.push_back(Enemy(1, 32, 2, 50, 2, EnemySpawnCoordinates(745.0f), 60));
                 }
 
                 // small enemy
@@ -445,6 +604,51 @@ Vector2 EnemySpawnCoordinates(float distance)
     return returnCoordinates;
 }
 
+void UpdateBalls()
+{ 
+    if (flyingBalls.size() != 0)
+    {
+        // update ball location 
+        for (FlyingBall& ball : flyingBalls)
+        {
+            float distanceThisFrame = ball.speed * GetFrameTime();
+
+            // move ball, if it's close to max flight distance, only fly to there
+            if (distanceThisFrame < ball.maxDistance)
+            {
+                ball.location.x += ball.direction.x * distanceThisFrame;
+                ball.location.y += ball.direction.y * distanceThisFrame;
+            }
+            else
+            {
+                ball.location.x += ball.direction.x * ball.maxDistance;
+                ball.location.y += ball.direction.y * ball.maxDistance;
+            }
+            ball.maxDistance -= distanceThisFrame;
+        }
+
+        // remove balls at their max distance
+        std::erase_if(flyingBalls, [](const FlyingBall& x)
+            {
+                return x.maxDistance <= 0;
+            });
+
+        // damage enemies
+        for (FlyingBall& ball : flyingBalls)
+        {
+            Vector4 damageArea(ball.location.x - ball.range, ball.location.x + ball.range, ball.location.y - ball.range, ball.location.y + ball.range);
+
+            for (Enemy& enemy : activeEnemies) // & ==> Modify original value and not a copy!
+            {
+                if (enemy.location.x > damageArea.x and enemy.location.x < damageArea.y and enemy.location.y > damageArea.z and enemy.location.y < damageArea.w)
+                {
+                    enemy.hp -= ball.damage;
+                }
+            }
+        }
+    }
+}
+
   // COMPLETE
 void UpdateEnemies()
 {
@@ -454,6 +658,14 @@ void UpdateEnemies()
         if (enemy.hp <= 0)
         {
             player.xp += enemy.xpDropAmount;
+            if (enemy.image == 0)
+            PlaySound(gameSounds[SND_ENEMY_DEATH_BEE]);
+            if (enemy.image == 1)
+                PlaySound(gameSounds[SND_ENEMY_DEATH_SPIKY]);
+            if (enemy.image == 2)
+                PlaySound(gameSounds[SND_ENEMY_DEATH_SPIDER]);
+            if (enemy.image == 3)
+                PlaySound(gameSounds[SND_ENEMY_DEATH_SKELETON]);
         }
     }
 
@@ -490,22 +702,33 @@ void UpdatePlayer()
     // teleport animation
     if (teleportFramesLeft > 0)
     {
+        player.hp = 99999;
         player.location = EnemySpawnCoordinates(1000.0f);
         teleportFramesLeft--;
     }
     if (teleportFramesLeft == 0 and tempNewLocation.x != -99999)
     {
         player.location = tempNewLocation;
+        player.hp = oldHp;
         tempNewLocation.x = -99999;
     }
 
+    // dash
+    if (dashBoostDuration > 0) 
+    {
+        player.location.x += player.velocity.x * GetFrameTime() * dashBoost;
+        player.location.y += player.velocity.y * GetFrameTime() * dashBoost;
+        dashBoostDuration--;
+
+        Spell_Damage(32, 30);
+    }
+
     // walking
-    if (player.isWalking == true)
+    if (player.isWalking == true and dashBoostDuration == 0)
     {
         player.location.x += player.velocity.x * GetFrameTime();
         player.location.y += player.velocity.y * GetFrameTime();
     }
-
 
     // if mobs nearby - get damage
     for (const Enemy& enemy : activeEnemies)
@@ -513,7 +736,7 @@ void UpdatePlayer()
         if (enemy.distanceToPlayer < 32)
         {
             player.hp -= enemy.damage * GetFrameTime();
-            // TODO DISPLAY HURT ANIMATION / OVERLAY / EFFECT
+            PlaySound(gameSounds[SND_PLAYER_DAMAGE]);
         }
 
         if (player.hp <= 0)
@@ -527,6 +750,7 @@ void UpdatePlayer()
     // if enough xp for next level
     if (player.xp >= player.xpToNextLevel)
     {
+        PlaySound(gameSounds[SND_PLAYER_LEVELUP]);
         player.level++;
         player.hp += 1000; // get 1000, NOT fill to 1000 => rewards players for not loosing hp
         player.xp -= player.xpToNextLevel;
@@ -544,6 +768,7 @@ void UpdatePlayer()
  // complete
 void Die()
 {
+    PlaySound(gameSounds[SND_PLAYER_DEATH]);
     // reset player / world
     player = Player();
     seed = GetRandomValue(0, INT_MAX);
@@ -683,17 +908,45 @@ void DisplaySpells()
     if (stompDuration > 0)
     {
         int opacity = stompDuration * 8;
-        std::cout << opacity << "\n";
         DrawRectangle(screenWidth / 2 - 128, screenHeight / 2 - 128, 256, 256, Color{ 230, 41, 55, static_cast<unsigned char>(opacity) });
         stompDuration--;
     }
+
+    // balls
+    if (flyingBalls.size() != 0)
+    {
+        // update ball location 
+        for (FlyingBall& ball : flyingBalls)
+        {
+            Vector2 tempScreenPos = worldPosToScreenPos(ball.location);
+            tempScreenPos.x += screenWidth / 2;
+            tempScreenPos.y += screenHeight / 2;
+            
+            DrawTextureV(spellImages[ball.image], tempScreenPos, WHITE);
+        }
+    }
+    
 }
 
 void DisplayUI()
 {
-    
-    DrawText(TextFormat("Health: %d\nDeaths: %d", player.hp, DEBUG_DEATHS), 30, 30, 20, WHITE);
+    int displayHp{ 0 };
+    int fps{ GetFPS() };
+    if (teleportFramesLeft == 0)
+    {
+        displayHp = player.hp;
+    }
+    if (teleportFramesLeft > 0)
+    {
+        displayHp = oldHp;
+    }
+    DrawText(TextFormat("Health: %d\nDeaths: %d\nFPS: %d", displayHp, DEBUG_DEATHS, fps), 30, 30, 20, WHITE);
     DrawText(TextFormat("XP: %d\nLevel: %d", player.xp, player.level), 180, 30, 20, WHITE);
+
+    if (displayBeginningTip == true)
+    {
+        DrawText(TextFormat("Hold [SPACE] until you open your book"), 350, 500, 30, WHITE);
+    }
 }
 
 // get coordinates where something should be displayed on screen from the world position
@@ -711,20 +964,3 @@ Vector2 worldPosToScreenPos(Vector2 worldPosition)
 //INFO:
 // "DEBUG" = delete before release, made for testing stuff
 // "TODO" = stuff that needs to be done / change / completed
-
-
-
-
-
-
-/*
-Stomp - small splash around player - easy // med KNOCKBACK
-Dash - move 3 grids into the direction, inflict half damage - easy
-Canon ball - shoots in a straight line, low damage - easy
-
-Lightning - activate lightning and then spam to spawn random lightning (insta kill, random location) - Medium
-Sawblades - spawn 2 sawblates spinning around you for x time - medium
-FIRE BALL - larger, stronger canon ball
-
-Teleport - teleport to a random spot in a circle (slightly larger than mob spawn circle) - hard
-*/

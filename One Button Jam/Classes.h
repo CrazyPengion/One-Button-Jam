@@ -71,4 +71,17 @@ public:
 	bool didEnemiesSpawnThisSecond{ false };
 };
 
+class FlyingBall
+{
+public:
+	int image;
+	int damage;
+	int range;
+	int speed;
+
+	Vector2 location;
+	Vector2 direction;
+	int maxDistance;
+};
+
 #endif
